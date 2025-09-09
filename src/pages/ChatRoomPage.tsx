@@ -77,7 +77,11 @@ const ChatRoomPage: React.FC = () => {
   }, [messages]);
 
   const handleSendMessage = (content: string) => {
-    const messageToSend = { content };
+    const messageToSend = { 
+      content, 
+      roomId: roomId ? parseInt(roomId) : 0,
+      timestamp: new Date().toISOString()
+    };
     socketService.publish(`/app/rooms/${roomId}`, JSON.stringify(messageToSend));
   };
 
