@@ -1,8 +1,6 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
 }
 
 .logo {
@@ -39,4 +37,151 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Assignment Page Styles */
+.assignment-page {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.assignment-header {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.assignment-sidebar .card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.assignment-item {
+  border: none !important;
+  border-bottom: 1px solid #e9ecef !important;
+  transition: all 0.2s ease;
+}
+
+.assignment-item:hover {
+  background-color: #f8f9fa;
+}
+
+.assignment-item.active {
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196f3 !important;
+}
+
+.assignment-item:last-child {
+  border-bottom: none !important;
+}
+
+.assignment-detail .card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.attachment-list .border {
+  border-color: #e9ecef !important;
+  transition: all 0.2s ease;
+}
+
+.attachment-list .border:hover {
+  border-color: #2196f3 !important;
+  background-color: #f8f9fa;
+}
+
+/* Custom Progress Bar */
+.progress {
+  background-color: #e9ecef;
+}
+
+/* Tab Styles */
+.nav-tabs .nav-link {
+  border: none;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+  color: #2196f3;
+  border-bottom: 2px solid #2196f3;
+  background-color: transparent;
+}
+
+.nav-tabs .nav-link:hover {
+  border-color: transparent;
+  color: #2196f3;
+}
+
+/* Badge Styles */
+.badge {
+  font-size: 0.75em;
+}
+
+/* Button Styles */
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: #2196f3;
+  border-color: #2196f3;
+}
+
+.btn-primary:hover {
+  background-color: #1976d2;
+  border-color: #1976d2;
+}
+
+/* Card Header Styles */
+.card-header {
+  background-color: #f8f9fa !important;
+  border-bottom: 1px solid #e9ecef;
+  font-weight: 600;
+}
+
+/* List Group Styles */
+.list-group-item {
+  padding: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+  .assignment-sidebar {
+    margin-bottom: 2rem;
+  }
+}
+
+/* Loading Spinner */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Alert Styles */
+.alert {
+  border: none;
+  border-radius: 8px;
+}
+
+/* Form Styles */
+.form-control {
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+}
+
+.form-control:focus {
+  border-color: #2196f3;
+  box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
+}
+
+/* Breadcrumb Styles */
+.breadcrumb {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: ">";
+  color: #6c757d;
 }

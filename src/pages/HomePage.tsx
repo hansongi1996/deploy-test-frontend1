@@ -43,17 +43,19 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <Card>
-      <Card.Header as="h2">PeerFlow Chat</Card.Header>
-      <Card.Body>
+    <div className="text-center">
+      <Card className="mb-4">
+        <Card.Header as="h2">PeerFlow Chat</Card.Header>
+        <Card.Body>
         <Form.Group className="mb-3">
           <Form.Label>Your Username</Form.Label>
-          <InputGroup>
+          <InputGroup className="justify-content-center">
             <Form.Control
               type="text"
               placeholder="Enter your username to join a room"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              style={{ maxWidth: '400px' }}
             />
           </InputGroup>
         </Form.Group>
@@ -85,7 +87,7 @@ const HomePage: React.FC = () => {
           ))}
         </ListGroup>
 
-        <InputGroup className="mb-3">
+        <InputGroup className="mb-3 justify-content-center">
           <Form.Control
             type="text"
             placeholder="New room name"
@@ -94,13 +96,15 @@ const HomePage: React.FC = () => {
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleCreateRoom();
             }}
+            style={{ maxWidth: '300px' }}
           />
           <Button variant="outline-secondary" onClick={handleCreateRoom}>
             Create Room
           </Button>
         </InputGroup>
-      </Card.Body>
-    </Card>
+        </Card.Body>
+      </Card>
+    </div>
   );
 };
 

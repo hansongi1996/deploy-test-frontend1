@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, Button } from 'react-bootstrap';
 import type { ChatMessage } from '../types';
-// import api from '../api'; // not used
+import { trackRoomAccess } from '../api';
 import socketService from '../services/socketService';
 import MessageBubble from '../components/MessageBubble';
 import MessageInput from '../components/MessageInput';
@@ -17,6 +17,11 @@ const ChatRoomPage: React.FC = () => {
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
     if (storedUsername) setUsername(storedUsername);
+
+    // Track room access when entering
+    if (roomId) {
+      trackRoomAccess(parseInt(roomId), 'JOIN').catch(console.error);
+    }
 
     // Placeholder messages (replace with API call when ready)
     const placeholderMessages: ChatMessage[] = [
@@ -60,6 +65,10 @@ const ChatRoomPage: React.FC = () => {
       if (unsubscribe) unsubscribe();
       subscribedRef.current = false;
       socketService.disconnect();
+      // Track room leave when component unmounts
+      if (roomId) {
+        trackRoomAccess(parseInt(roomId), 'LEAVE').catch(console.error);
+      }
     };
   }, [roomId]);
 
@@ -73,27 +82,29 @@ const ChatRoomPage: React.FC = () => {
   };
 
   return (
-    <Card>
-      <Card.Header className="d-flex justify-content-between align-items-center">
-        <h4>Room #{roomId}</h4>
-        <Link to="/">
-          <Button variant="secondary" size="sm">Leave Room</Button>
-        </Link>
-      </Card.Header>
-      <Card.Body style={{ height: '60vh', overflowY: 'auto' }} className="d-flex flex-column">
-        <div className="flex-grow-1">
-          {messages.map((msg) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              isCurrentUser={msg.sender.username === username}
-            />
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-        <MessageInput onSendMessage={handleSendMessage} />
-      </Card.Body>
-    </Card>
+    <div className="d-flex justify-content-center">
+      <Card style={{ width: '100%', maxWidth: '800px' }}>
+        <Card.Header className="d-flex justify-content-between align-items-center">
+          <h4>Room #{roomId}</h4>
+          <Link to="/">
+            <Button variant="secondary" size="sm">Leave Room</Button>
+          </Link>
+        </Card.Header>
+        <Card.Body style={{ height: '60vh', overflowY: 'auto' }} className="d-flex flex-column">
+          <div className="flex-grow-1">
+            {messages.map((msg) => (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                isCurrentUser={msg.sender.username === username}
+              />
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+          <MessageInput onSendMessage={handleSendMessage} />
+        </Card.Body>
+      </Card>
+    </div>
   );
 };
 

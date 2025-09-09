@@ -2,6 +2,28 @@ export interface User {
   id: number;
   username: string;
   fullName: string;
+  email?: string;
+  role?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+}
+
+export interface AuthUser {
+  id: number;
+  username: string;
+  fullName: string;
+  email?: string;
+  role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+  token: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  user: User;
+  token: string;
+  expiresIn: number;
 }
 
 export interface ChatMessage {
@@ -17,4 +39,50 @@ export interface ChatRoom {
   roomName: string;
   type: 'ONE_ON_ONE' | 'GROUP';
   createdAt: string;
+}
+
+export interface Assignment {
+  id: number;
+  title: string;
+  description: string;
+  dueDate: string;
+  createdAt: string;
+  updatedAt: string;
+  maxScore: number;
+  tags: string[];
+  status: 'IN_PROGRESS' | 'SUBMITTED' | 'LATE' | 'GRADED';
+  submissionCount: number;
+  totalStudents: number;
+  attachments: AssignmentAttachment[];
+  requirements: string[];
+}
+
+export interface AssignmentAttachment {
+  id: number;
+  fileName: string;
+  fileUrl: string;
+  fileType: 'PDF' | 'ZIP' | 'DOC' | 'OTHER';
+}
+
+export interface AssignmentSubmission {
+  id: number;
+  assignmentId: number;
+  userId: number;
+  submissionType: 'FILE' | 'LINK';
+  fileUrl?: string;
+  linkUrl?: string;
+  submittedAt: string;
+  status: 'SUBMITTED' | 'LATE' | 'GRADED';
+  grade?: number;
+  feedback?: string;
+}
+
+export interface Notice {
+  id: number;
+  title: string;
+  content: string;
+  author: User;
+  isImportant: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
