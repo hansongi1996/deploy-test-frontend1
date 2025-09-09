@@ -84,6 +84,55 @@ let roomParticipants = {
   ]
 };
 
+// Mock notices data
+let notices = [
+  {
+    id: 1,
+    title: "중간고사 일정 안내",
+    content: "2024년 중간고사 일정을 안내드립니다.\n\n- 시험 기간: 2024년 4월 15일 ~ 4월 19일\n- 시험 과목: React, TypeScript, Node.js\n- 시험 장소: 각 강의실\n\n시험 준비에 최선을 다하시기 바랍니다.",
+    author: {
+      id: 1,
+      username: "admin1",
+      fullName: "박관리자",
+      email: "admin1@example.com",
+      role: "ADMIN"
+    },
+    isImportant: true,
+    createdAt: "2024-01-15T09:00:00.000Z",
+    updatedAt: "2024-01-15T09:00:00.000Z"
+  },
+  {
+    id: 2,
+    title: "과제 제출 마감일 연장 안내",
+    content: "React 기초 과제의 제출 마감일을 다음과 같이 연장합니다.\n\n- 기존 마감일: 2024년 1월 20일\n- 연장 마감일: 2024년 1월 25일\n\n연장된 기간 동안 과제를 완성해 주시기 바랍니다.",
+    author: {
+      id: 3,
+      username: "instructor1",
+      fullName: "이강사",
+      email: "instructor1@example.com",
+      role: "INSTRUCTOR"
+    },
+    isImportant: false,
+    createdAt: "2024-01-18T14:30:00.000Z",
+    updatedAt: "2024-01-18T14:30:00.000Z"
+  },
+  {
+    id: 3,
+    title: "채팅방 이용 규칙 안내",
+    content: "채팅방 이용 시 다음 규칙을 준수해 주시기 바랍니다.\n\n1. 상호 존중하는 언어 사용\n2. 학습 관련 주제로 대화\n3. 스팸 메시지 금지\n4. 개인정보 공유 금지\n\n위 규칙을 위반할 경우 채팅방 이용이 제한될 수 있습니다.",
+    author: {
+      id: 1,
+      username: "admin1",
+      fullName: "박관리자",
+      email: "admin1@example.com",
+      role: "ADMIN"
+    },
+    isImportant: false,
+    createdAt: "2024-01-20T10:15:00.000Z",
+    updatedAt: "2024-01-20T10:15:00.000Z"
+  }
+];
+
 let assignments = [
   {
     id: 1,
@@ -540,6 +589,98 @@ app.get('/api/chatrooms/:roomId/participants', authenticateToken, (req, res) => 
   const participants = roomParticipants[roomId] || [];
   console.log(`👥 GET /api/chatrooms/${roomId}/participants - 참여자 ${participants.length}명 조회`);
   res.json(participants);
+});
+
+// Notice API routes
+app.get('/api/notices', authenticateToken, (req, res) => {
+  console.log(`📢 GET /api/notices - 공지사항 목록 조회 by ${req.user.username}`);
+  res.json(notices);
+});
+
+app.get('/api/notices/:id', authenticateToken, (req, res) => {
+  const noticeId = parseInt(req.params.id);
+  const notice = notices.find(n => n.id === noticeId);
+  
+  if (!notice) {
+    return res.status(404).json({ error: 'Notice not found' });
+  }
+  
+  console.log(`📢 GET /api/notices/${noticeId} - 공지사항 상세 조회 by ${req.user.username}`);
+  res.json(notice);
+});
+
+app.post('/api/notices', authenticateToken, (req, res) => {
+  const { title, content, isImportant } = req.body;
+  
+  if (!title || !content) {
+    return res.status(400).json({ error: 'Title and content are required' });
+  }
+  
+  const newNotice = {
+    id: Date.now(),
+    title: title.trim(),
+    content: content.trim(),
+    author: {
+      id: req.user.id,
+      username: req.user.username,
+      fullName: req.user.username, // Mock에서는 username을 fullName으로 사용
+      email: `${req.user.username}@example.com`,
+      role: req.user.role
+    },
+    isImportant: isImportant || false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  notices.unshift(newNotice); // 최신 공지사항을 맨 위에 추가
+  console.log(`📢 POST /api/notices - 새 공지사항 생성: ${newNotice.title} by ${req.user.username}`);
+  res.status(201).json(newNotice);
+});
+
+app.put('/api/notices/:id', authenticateToken, (req, res) => {
+  const noticeId = parseInt(req.params.id);
+  const { title, content, isImportant } = req.body;
+  
+  const noticeIndex = notices.findIndex(n => n.id === noticeId);
+  if (noticeIndex === -1) {
+    return res.status(404).json({ error: 'Notice not found' });
+  }
+  
+  // 작성자만 수정 가능 (관리자는 모든 공지사항 수정 가능)
+  const notice = notices[noticeIndex];
+  if (req.user.role !== 'ADMIN' && notice.author.id !== req.user.id) {
+    return res.status(403).json({ error: 'Only the author or admin can edit this notice' });
+  }
+  
+  notices[noticeIndex] = {
+    ...notice,
+    title: title.trim(),
+    content: content.trim(),
+    isImportant: isImportant || false,
+    updatedAt: new Date().toISOString()
+  };
+  
+  console.log(`📢 PUT /api/notices/${noticeId} - 공지사항 수정: ${title} by ${req.user.username}`);
+  res.json(notices[noticeIndex]);
+});
+
+app.delete('/api/notices/:id', authenticateToken, (req, res) => {
+  const noticeId = parseInt(req.params.id);
+  const noticeIndex = notices.findIndex(n => n.id === noticeId);
+  
+  if (noticeIndex === -1) {
+    return res.status(404).json({ error: 'Notice not found' });
+  }
+  
+  // 작성자만 삭제 가능 (관리자는 모든 공지사항 삭제 가능)
+  const notice = notices[noticeIndex];
+  if (req.user.role !== 'ADMIN' && notice.author.id !== req.user.id) {
+    return res.status(403).json({ error: 'Only the author or admin can delete this notice' });
+  }
+  
+  notices.splice(noticeIndex, 1);
+  console.log(`📢 DELETE /api/notices/${noticeId} - 공지사항 삭제: ${notice.title} by ${req.user.username}`);
+  res.json({ message: 'Notice deleted successfully' });
 });
 
 // Health check

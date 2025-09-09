@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Alert, Spinner, Modal, Form, Badge } from 'react-bootstrap';
 import { getNotices, getNotice, createNotice, updateNotice, deleteNotice } from '../api';
+import { useAuth } from '../contexts/AuthContext';
 import type { Notice } from '../types';
 
 const NoticePage: React.FC = () => {
+  const { user } = useAuth();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,6 +18,11 @@ const NoticePage: React.FC = () => {
     content: '',
     isImportant: false
   });
+
+  // 권한 확인 함수들
+  const isInstructorOrAdmin = () => {
+    return user?.role === 'INSTRUCTOR' || user?.role === 'ADMIN';
+  };
 
   useEffect(() => {
     loadNotices();
@@ -129,9 +136,11 @@ const NoticePage: React.FC = () => {
     <div className="text-center">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>공지사항</h2>
-        <Button variant="primary" onClick={handleCreateNotice}>
-          새 공지사항 작성
-        </Button>
+        {isInstructorOrAdmin() && (
+          <Button variant="primary" onClick={handleCreateNotice}>
+            새 공지사항 작성
+          </Button>
+        )}
       </div>
       
       {error && (
@@ -182,20 +191,24 @@ const NoticePage: React.FC = () => {
                     >
                       자세히 보기
                     </Button>
-                    <Button 
-                      variant="outline-secondary" 
-                      size="sm"
-                      onClick={() => handleEditNotice(notice)}
-                    >
-                      수정
-                    </Button>
-                    <Button 
-                      variant="outline-danger" 
-                      size="sm"
-                      onClick={() => handleDeleteNotice(notice.id)}
-                    >
-                      삭제
-                    </Button>
+                    {isInstructorOrAdmin() && (
+                      <>
+                        <Button 
+                          variant="outline-secondary" 
+                          size="sm"
+                          onClick={() => handleEditNotice(notice)}
+                        >
+                          수정
+                        </Button>
+                        <Button 
+                          variant="outline-danger" 
+                          size="sm"
+                          onClick={() => handleDeleteNotice(notice.id)}
+                        >
+                          삭제
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </Card.Footer>
               </Card>
