@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, Button } from 'react-bootstrap';
-import type { ChatMessage } from '../types';
-import { trackRoomAccess } from '../api';
+import type { ChatMessage, ChatRoomParticipant } from '../types';
+import { trackRoomAccess, joinChatRoom, leaveChatRoom, getRoomParticipants } from '../api';
 import socketService from '../services/socketService';
 import MessageBubble from '../components/MessageBubble';
 import MessageInput from '../components/MessageInput';
@@ -11,6 +11,8 @@ const ChatRoomPage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [username, setUsername] = useState('');
+  const [participants, setParticipants] = useState<ChatRoomParticipant[]>([]);
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const subscribedRef = useRef(false);
 
@@ -18,10 +20,26 @@ const ChatRoomPage: React.FC = () => {
     const storedUsername = localStorage.getItem('username');
     if (storedUsername) setUsername(storedUsername);
 
-    // Track room access when entering
-    if (roomId) {
-      trackRoomAccess(parseInt(roomId), 'JOIN').catch(console.error);
-    }
+    const initializeRoom = async () => {
+      if (!roomId) return;
+      
+      try {
+        setLoading(true);
+        // Join the room
+        await joinChatRoom(parseInt(roomId));
+        // Track room access
+        await trackRoomAccess(parseInt(roomId), 'JOIN');
+        // Load participants
+        const participantData = await getRoomParticipants(parseInt(roomId));
+        setParticipants(participantData);
+      } catch (error) {
+        console.error('Failed to join room:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeRoom();
 
     // Placeholder messages (replace with API call when ready)
     const placeholderMessages: ChatMessage[] = [
@@ -65,8 +83,9 @@ const ChatRoomPage: React.FC = () => {
       if (unsubscribe) unsubscribe();
       subscribedRef.current = false;
       socketService.disconnect();
-      // Track room leave when component unmounts
+      // Leave room and track room leave when component unmounts
       if (roomId) {
+        leaveChatRoom(parseInt(roomId)).catch(console.error);
         trackRoomAccess(parseInt(roomId), 'LEAVE').catch(console.error);
       }
     };
@@ -89,9 +108,16 @@ const ChatRoomPage: React.FC = () => {
     <div className="d-flex justify-content-center">
       <Card style={{ width: '100%', maxWidth: '800px' }}>
         <Card.Header className="d-flex justify-content-between align-items-center">
-          <h4>Room #{roomId}</h4>
+          <div>
+            <h4>Room #{roomId}</h4>
+            <small className="text-muted">
+              {participants.length} participants
+            </small>
+          </div>
           <Link to="/">
-            <Button variant="secondary" size="sm">Leave Room</Button>
+            <Button variant="secondary" size="sm" disabled={loading}>
+              {loading ? 'Leaving...' : 'Leave Room'}
+            </Button>
           </Link>
         </Card.Header>
         <Card.Body style={{ height: '60vh', overflowY: 'auto' }} className="d-flex flex-column">

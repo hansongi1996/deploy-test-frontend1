@@ -34,11 +34,21 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export type ChatRoomType = 'ONE_TO_ONE' | 'GROUP';
+
 export interface ChatRoom {
   id: number;
   roomName: string;
-  type: 'ONE_ON_ONE' | 'GROUP';
+  type: ChatRoomType;
   createdAt: string;
+}
+
+export interface ChatRoomParticipant {
+  id: number;
+  username: string;
+  nickname: string;
+  role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+  status: 'PENDING' | 'ACTIVE' | 'LEFT';
 }
 
 export interface Assignment {

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ChatRoom, Assignment, AssignmentSubmission, Notice, LoginRequest, LoginResponse } from './types';
+import type { ChatRoom, ChatRoomType, ChatRoomParticipant, Assignment, AssignmentSubmission, Notice, LoginRequest, LoginResponse } from './types';
 
 const api = axios.create({
   baseURL: 'http://localhost:3001/api',
@@ -39,8 +39,26 @@ export const getChatRooms = async (): Promise<ChatRoom[]> => {
   return response.data;
 };
 
-export const createChatRoom = async (roomName: string): Promise<ChatRoom> => {
-  const response = await api.post('/chatrooms', { roomName, type: 'GROUP' }); // Assuming 'GROUP' as default
+export const createChatRoom = async (roomName: string, type: ChatRoomType = 'GROUP'): Promise<ChatRoom> => {
+  const response = await api.post('/chatrooms', { roomName, type });
+  return response.data;
+};
+
+// Join chat room
+export const joinChatRoom = async (roomId: number): Promise<{ message: string }> => {
+  const response = await api.post(`/chatrooms/${roomId}/join`);
+  return response.data;
+};
+
+// Leave chat room
+export const leaveChatRoom = async (roomId: number): Promise<{ message: string }> => {
+  const response = await api.post(`/chatrooms/${roomId}/leave`);
+  return response.data;
+};
+
+// Get room participants
+export const getRoomParticipants = async (roomId: number): Promise<ChatRoomParticipant[]> => {
+  const response = await api.get(`/chatrooms/${roomId}/participants`);
   return response.data;
 };
 

@@ -57,6 +57,33 @@ const upload = multer({
 });
 
 // Mock data
+let chatRooms = [
+  {
+    id: 1,
+    roomName: "General",
+    type: "GROUP",
+    createdAt: "2024-01-01T09:00:00.000Z"
+  },
+  {
+    id: 2,
+    roomName: "TypeScript Talk",
+    type: "GROUP", 
+    createdAt: "2024-01-01T10:00:00.000Z"
+  }
+];
+
+// Mock participants data
+let roomParticipants = {
+  1: [
+    { id: 1, username: "admin1", nickname: "관리자", role: "ADMIN", status: "ACTIVE" },
+    { id: 2, username: "student1", nickname: "김학생", role: "STUDENT", status: "ACTIVE" }
+  ],
+  2: [
+    { id: 1, username: "admin1", nickname: "관리자", role: "ADMIN", status: "ACTIVE" },
+    { id: 3, username: "instructor1", nickname: "이강사", role: "INSTRUCTOR", status: "ACTIVE" }
+  ]
+};
+
 let assignments = [
   {
     id: 1,
@@ -399,6 +426,120 @@ app.patch('/api/submissions/:id', (req, res) => {
   submission.feedback = feedback;
   
   res.json(submission);
+});
+
+// Chat Room API routes
+app.get('/api/chatrooms', (req, res) => {
+  console.log('📋 GET /api/chatrooms - 채팅방 목록 조회');
+  res.json(chatRooms);
+});
+
+app.post('/api/chatrooms', (req, res) => {
+  const { roomName, type } = req.body;
+  
+  if (!roomName || !type) {
+    return res.status(400).json({ error: 'roomName and type are required' });
+  }
+  
+  if (!['ONE_TO_ONE', 'GROUP'].includes(type)) {
+    return res.status(400).json({ error: 'type must be ONE_TO_ONE or GROUP' });
+  }
+  
+  const newRoom = {
+    id: Date.now(),
+    roomName: roomName.trim(),
+    type: type,
+    createdAt: new Date().toISOString()
+  };
+  
+  chatRooms.push(newRoom);
+  // 새 방에 빈 참여자 목록 초기화
+  roomParticipants[newRoom.id] = [];
+  
+  console.log(`🏠 POST /api/chatrooms - 새 채팅방 생성: ${newRoom.roomName} (${newRoom.type})`);
+  res.status(201).json(newRoom);
+});
+
+// Join chat room
+app.post('/api/chatrooms/:roomId/join', authenticateToken, (req, res) => {
+  const roomId = parseInt(req.params.roomId);
+  const userId = req.user.id;
+  const username = req.user.username;
+  
+  // 방이 존재하는지 확인
+  const room = chatRooms.find(r => r.id === roomId);
+  if (!room) {
+    return res.status(404).json({ error: 'Chat room not found' });
+  }
+  
+  // 참여자 목록 초기화 (없는 경우)
+  if (!roomParticipants[roomId]) {
+    roomParticipants[roomId] = [];
+  }
+  
+  // 이미 참여 중인지 확인
+  const existingParticipant = roomParticipants[roomId].find(p => p.id === userId);
+  if (existingParticipant) {
+    if (existingParticipant.status === 'ACTIVE') {
+      return res.status(400).json({ error: 'Already joined this room' });
+    } else {
+      // 상태를 ACTIVE로 변경
+      existingParticipant.status = 'ACTIVE';
+    }
+  } else {
+    // 새 참여자 추가
+    const newParticipant = {
+      id: userId,
+      username: username,
+      nickname: username, // 기본값으로 username 사용
+      role: req.user.role || 'STUDENT',
+      status: 'ACTIVE'
+    };
+    roomParticipants[roomId].push(newParticipant);
+  }
+  
+  console.log(`🚪 POST /api/chatrooms/${roomId}/join - 사용자 ${username} 참여`);
+  res.json({ message: 'Successfully joined the room' });
+});
+
+// Leave chat room
+app.post('/api/chatrooms/:roomId/leave', authenticateToken, (req, res) => {
+  const roomId = parseInt(req.params.roomId);
+  const userId = req.user.id;
+  const username = req.user.username;
+  
+  // 방이 존재하는지 확인
+  const room = chatRooms.find(r => r.id === roomId);
+  if (!room) {
+    return res.status(404).json({ error: 'Chat room not found' });
+  }
+  
+  // 참여자 찾기
+  const participant = roomParticipants[roomId]?.find(p => p.id === userId);
+  if (!participant) {
+    return res.status(400).json({ error: 'Not a member of this room' });
+  }
+  
+  // 상태를 LEFT로 변경
+  participant.status = 'LEFT';
+  
+  console.log(`🚪 POST /api/chatrooms/${roomId}/leave - 사용자 ${username} 퇴장`);
+  res.json({ message: 'Successfully left the room' });
+});
+
+// Get room participants
+app.get('/api/chatrooms/:roomId/participants', authenticateToken, (req, res) => {
+  const roomId = parseInt(req.params.roomId);
+  
+  // 방이 존재하는지 확인
+  const room = chatRooms.find(r => r.id === roomId);
+  if (!room) {
+    return res.status(404).json({ error: 'Chat room not found' });
+  }
+  
+  const participants = roomParticipants[roomId] || [];
+  console.log(`👥 GET /api/chatrooms/${roomId}/participants - 참여자 ${participants.length}명 조회`);
+  res.json(participants);
 });
 
 // Health check
