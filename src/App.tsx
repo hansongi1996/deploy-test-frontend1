@@ -14,7 +14,8 @@ import MemberManage from './components/admin/MemberManage';
 import { Container, Navbar, Nav, Button } from 'react-bootstrap';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from './store';
-import { logout } from './store/slices/authSlice';
+import { logout, initializeAuth } from './store/slices/authSlice';
+import { useEffect } from 'react';
 
 // Protected Route Component (Redux)
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -74,6 +75,47 @@ const Navigation: React.FC = () => {
 
 // 메인 App 컴포넌트
 function App() {
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  // 앱 초기화 시 localStorage에서 인증 정보 복원
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    if (authToken && !isAuthenticated) {
+      // 토큰이 있으면 사용자 정보를 다시 가져와서 Redux에 저장
+      fetch('http://localhost:8080/api/users/me', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error('토큰이 유효하지 않습니다.');
+      })
+      .then(userInfoData => {
+        dispatch(initializeAuth({
+          id: userInfoData.id,
+          username: userInfoData.username,
+          fullName: userInfoData.fullName || userInfoData.username,
+          email: userInfoData.email,
+          role: userInfoData.role,
+          token: authToken
+        }));
+      })
+      .catch(error => {
+        console.error('인증 정보 복원 실패:', error);
+        localStorage.removeItem('authToken');
+        dispatch(initializeAuth(null));
+      });
+    } else if (!authToken) {
+      dispatch(initializeAuth(null));
+    }
+  }, [dispatch, isAuthenticated]);
+
   return (
     <Router>
       <div style={{ 

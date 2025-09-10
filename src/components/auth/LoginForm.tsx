@@ -60,7 +60,15 @@ const LoginForm = () => {
 
                 const userInfoData = await userInfoResponse.json();
                 
-                dispatch(setUserData({ role: userInfoData.role, token: token }));
+                // 사용자 정보를 완전히 저장
+                dispatch(setUserData({ 
+                    id: userInfoData.id,
+                    username: userInfoData.username,
+                    fullName: userInfoData.fullName || userInfoData.username,
+                    email: userInfoData.email,
+                    role: userInfoData.role, 
+                    token: token 
+                }));
 
                 if (userInfoData.role === "ADMIN" || userInfoData.role === "INSTRUCTOR") {
                     navigate("/admin");

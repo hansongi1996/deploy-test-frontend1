@@ -3,14 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button, Form, ListGroup, Card, InputGroup } from 'react-bootstrap';
 import { getChatRooms, createChatRoom, joinChatRoom } from '../api';
 import type { ChatRoom, ChatRoomType } from '../types';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../store';
 
 const HomePage: React.FC = () => {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomType, setNewRoomType] = useState<ChatRoomType>('GROUP');
-  const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  
+  // Redux에서 사용자 정보 가져오기
+  const { user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     loadRooms();
@@ -52,15 +56,15 @@ const HomePage: React.FC = () => {
   };
 
   const handleJoinRoom = async (roomId: number) => {
-    if (!username.trim()) {
-      alert('Please enter a username.');
+    if (!user?.username) {
+      alert('사용자 정보를 찾을 수 없습니다.');
       return;
     }
     
     try {
       setLoading(true);
       await joinChatRoom(roomId);
-      localStorage.setItem('username', username.trim());
+      localStorage.setItem('username', user.username);
       navigate(`/rooms/${roomId}`);
     } catch (error) {
       console.error('Failed to join room:', error);
@@ -75,18 +79,10 @@ const HomePage: React.FC = () => {
       <Card className="mb-4">
         <Card.Header as="h2">PeerFlow Chat</Card.Header>
         <Card.Body>
-        <Form.Group className="mb-3">
-          <Form.Label>Your Username</Form.Label>
-          <InputGroup className="justify-content-center">
-            <Form.Control
-              type="text"
-              placeholder="Enter your username to join a room"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              style={{ maxWidth: '400px' }}
-            />
-          </InputGroup>
-        </Form.Group>
+        <div className="mb-3">
+          <h5>안녕하세요, {user?.fullName || user?.username}님!</h5>
+          <p className="text-muted">역할: {user?.role}</p>
+        </div>
 
         <hr />
 

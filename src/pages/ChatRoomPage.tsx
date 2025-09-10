@@ -6,19 +6,22 @@ import { trackRoomAccess, joinChatRoom, leaveChatRoom, getRoomParticipants } fro
 import socketService from '../services/socketService';
 import MessageBubble from '../components/MessageBubble';
 import MessageInput from '../components/MessageInput';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../store';
 
 const ChatRoomPage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [username, setUsername] = useState('');
   const [participants, setParticipants] = useState<ChatRoomParticipant[]>([]);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const subscribedRef = useRef(false);
+  
+  // Redux에서 사용자 정보 가져오기
+  const { user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
-    const storedUsername = localStorage.getItem('username');
-    if (storedUsername) setUsername(storedUsername);
+    // Redux에서 사용자 정보를 사용하므로 localStorage에서 가져올 필요 없음
 
     const initializeRoom = async () => {
       if (!roomId) return;
@@ -126,7 +129,7 @@ const ChatRoomPage: React.FC = () => {
               <MessageBubble
                 key={msg.id}
                 message={msg}
-                isCurrentUser={msg.sender.username === username}
+                isCurrentUser={msg.sender.username === user?.username}
               />
             ))}
             <div ref={messagesEndRef} />

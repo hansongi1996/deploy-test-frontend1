@@ -83,7 +83,10 @@ const authSlice = createSlice({
     // SKRookies 스타일의 사용자 데이터 설정
     setUserData: (state, action) => {
       state.user = {
-        ...state.user,
+        id: action.payload.id || 0,
+        username: action.payload.username || '',
+        fullName: action.payload.fullName || action.payload.username || '',
+        email: action.payload.email || '',
         role: action.payload.role,
         token: action.payload.token,
       } as AuthUser;
