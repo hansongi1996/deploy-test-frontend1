@@ -1,24 +1,31 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 
-// 사용자 정보의 타입을 정의합니다.
-// 이 부분을 통해 TypeScript의 장점을 활용할 수 있습니다.
+// 사용자 정보의 타입을 수정했습니다.
 interface User {
+  userid: number; // ⭐ user_id에서 userid로 변경
   username: string;
   nickname: string;
   role: string;
+  status: string;
   email: string;
 }
 
 const MemberManage: React.FC = () => {
-  // 1. 사용자 데이터를 저장할 상태(state)를 정의합니다.
-  // 초기값은 빈 배열로 설정하고, 타입은 User 배열로 지정합니다.
+  const { user } = useSelector((state: RootState) => state.auth);
+  const token = user?.token;
   const [users, setUsers] = useState<User[]>([]);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editFormData, setEditFormData] = useState<Partial<User>>({});
+  const API_BASE_URL = 'http://localhost:8080';
 
-  // 2. 컴포넌트가 처음 마운트될 때 API를 호출합니다.
   useEffect(() => {
-    const API_BASE_URL = ''; // Vite 프록시 사용
-    
-    const token = localStorage.getItem('authToken')
+    if (!token) {
+      console.error('인증 토큰이 없습니다. 로그인 상태를 확인하세요.');
+      return;
+    }
+    //전체 user 조회
     fetch(`${API_BASE_URL}/api/admin/users`, {
       method: 'GET',
       headers: {
@@ -27,20 +34,99 @@ const MemberManage: React.FC = () => {
       }
     })
       .then(response => {
-        // HTTP 응답이 성공적인지 확인합니다.
         if (!response.ok) {
           throw new Error('네트워크 응답이 올바르지 않습니다.');
         }
         return response.json();
       })
       .then(data => {
-        // 3. 받아온 데이터를 상태에 저장합니다.
-        setUsers(data);
+        const mappedUsers = data.map((user:User) => ({
+          userid: user.userid,
+          username: user.username,
+          nickname: user.nickname,
+          role: user.role,
+          status: user.status,
+          email: user.email
+        }));
+        setUsers(mappedUsers);
       })
       .catch(error => {
         console.error('사용자 데이터를 불러오는 데 실패했습니다:', error);
       });
-  }, []); // 빈 의존성 배열([])을 넣어 컴포넌트가 처음 렌더링될 때만 실행되도록 합니다.
+  }, [token]);
+
+  //회원 탈퇴 handler
+  const handleDelete = (userid: number) => {
+    const userConfirmed = confirm("정말로 회원을 탈퇴시키겠습니까?");
+
+    if (userConfirmed) {
+      fetch(`${API_BASE_URL}/api/admin/users/${userid}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('네트워크 응답이 올바르지 않습니다.');
+          }
+          setUsers(users.filter(user => user.userid !== userid));
+          alert("회원 탈퇴가 성공적으로 완료되었습니다.");
+        })
+        .catch(error => {
+          console.error('사용자 삭제에 실패했습니다:', error);
+          alert("회원 탈퇴에 실패했습니다.");
+        });
+    } else {
+      console.log("탈퇴가 취소되었습니다.");
+    }
+  };
+  //정보수정 클릭 handler
+  const handleEditClick = (user: User) => {
+    if (editingUserId === user.userid) {
+      setEditingUserId(null);
+    } else {
+      setEditingUserId(user.userid);
+      setEditFormData(user);
+    }
+  };
+
+  // ⭐ HTMLInputElement와 HTMLSelectElement를 모두 처리할 수 있도록 타입을 명확히 정의했습니다.
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
+  };
+
+  const handleSave = async (userid: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${userid}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editFormData)
+      });
+
+      if (!response.ok) {
+        throw new Error('정보 수정에 실패했습니다.');
+      }
+
+      setUsers(prevUsers =>
+        prevUsers.map(user => (user.userid === userid ? { ...user, ...editFormData } as User : user))
+      );
+      setEditingUserId(null);
+      alert("정보가 성공적으로 수정되었습니다.");
+
+    } catch (error) {
+      console.error('사용자 정보 수정에 실패했습니다:', error);
+      alert("사용자 정보 수정에 실패했습니다.");
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center p-4">
@@ -53,27 +139,66 @@ const MemberManage: React.FC = () => {
               <th className="font-normal pb-4 pr-2">이름</th>
               <th className="font-normal pb-4 pr-2">닉네임</th>
               <th className="font-normal pb-4 pr-2">권한</th>
+              <th className="font-normal pb-4 pr-2">상태</th>
               <th className="font-normal pb-4 pr-2">이메일</th>
               <th className="font-normal pb-4 pr-2">정보수정</th>
               <th className="font-normal pb-4 pr-2">탈퇴</th>
             </tr>
           </thead>
           <tbody>
-            {/* 4. users 상태 배열을 map 함수로 순회하며 각 사용자마다 <tr> 요소를 생성합니다. */}
             {users.map((user, index) => (
-              <tr key={user.email} >
-                <td>{index + 1}</td>
-                <td>{user.username}</td>
-                <td>{user.nickname}</td>
-                <td>{user.role}</td>
-                <td>{user.email}</td>
-                <td>
-                  <button className="text-blue-500 hover:underline">정보수정</button>
-                </td>
-                <td>
-                  <button className="text-red-500 hover:underline">탈퇴</button>
-                </td>
-              </tr>
+              <React.Fragment key={user.userid}>
+                <tr className="bg-gray-100 rounded-lg">
+                  <td>{index + 1}</td>
+                  <td>{user.username}</td>
+                  <td>{user.nickname}</td>
+                  <td>{user.role}</td>
+                  <td>{user.status}</td>
+                  <td>{user.email}</td>
+                  <td>
+                    <button
+                      className="text-blue-500 hover:underline"
+                      onClick={() => handleEditClick(user)}
+                    >
+                      {editingUserId === user.userid ? "취소" : "정보수정"}
+                    </button>
+                  </td>
+                  <td>
+                    <button className="text-red-500 hover:underline" onClick={() => handleDelete(user.userid)}>탈퇴</button>
+                  </td>
+                </tr>
+                {editingUserId === user.userid && (
+                  <tr>
+                    <td colSpan={8}>
+                      <div className="flex flex-col space-y-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="flex space-x-2">
+                          <input type="text" name="username" value={editFormData.username || ''} onChange={handleEditChange} placeholder="이름" className="flex-1 border rounded px-2 py-1" />
+                          <input type="text" name="nickname" value={editFormData.nickname || ''} onChange={handleEditChange} placeholder="닉네임" className="flex-1 border rounded px-2 py-1" />
+                          <select name="role" value={editFormData.role || ''} onChange={handleEditChange} className="flex-1 border rounded px-2 py-1">
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="STUDENT">STUDENT</option>
+                            <option value="TEACHER">TEACHER</option>
+                          </select>
+                          <select name="status" value={editFormData.status || ''} onChange={handleEditChange} className="flex-1 border rounded px-2 py-1">
+                            <option value="PENDING">PENDING</option>
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                          </select>
+                          <input type="email" name="email" value={editFormData.email || ''} onChange={handleEditChange} placeholder="이메일" className="flex-1 border rounded px-2 py-1" />
+                        </div>
+                        <div className="text-right">
+                          <button
+                            onClick={() => handleSave(user.userid)}
+                            className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                          >
+                            저장
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>
