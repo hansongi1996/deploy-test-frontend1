@@ -161,9 +161,5 @@ export const getCurrentUser = async (): Promise<any> => {
   return response.data;
 };
 
-// Room tracking API
-export const trackRoomAccess = async (roomId: number, action: 'JOIN' | 'LEAVE'): Promise<void> => {
-  await api.post('/rooms/track', { roomId, action });
-};
 
 export default api;

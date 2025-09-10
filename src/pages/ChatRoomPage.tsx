@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, Button } from 'react-bootstrap';
 import type { ChatMessage, ChatRoomParticipant } from '../types';
-import { trackRoomAccess, joinChatRoom, leaveChatRoom, getRoomParticipants } from '../api';
+import { joinChatRoom, leaveChatRoom, getRoomParticipants } from '../api';
 import socketService from '../services/socketService';
 import MessageBubble from '../components/MessageBubble';
 import MessageInput from '../components/MessageInput';
@@ -30,8 +30,6 @@ const ChatRoomPage: React.FC = () => {
         setLoading(true);
         // Join the room
         await joinChatRoom(parseInt(roomId));
-        // Track room access
-        await trackRoomAccess(parseInt(roomId), 'JOIN');
         // Load participants
         const participantData = await getRoomParticipants(parseInt(roomId));
         setParticipants(participantData);
@@ -86,10 +84,9 @@ const ChatRoomPage: React.FC = () => {
       if (unsubscribe) unsubscribe();
       subscribedRef.current = false;
       socketService.disconnect();
-      // Leave room and track room leave when component unmounts
+      // Leave room when component unmounts
       if (roomId) {
         leaveChatRoom(parseInt(roomId)).catch(console.error);
-        trackRoomAccess(parseInt(roomId), 'LEAVE').catch(console.error);
       }
     };
   }, [roomId]);
