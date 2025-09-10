@@ -32,7 +32,7 @@ const RegisterForm = () => {
 
         console.log("회원가입 데이터:", userData);
 
-        const API_BASE_URL = 'http://localhost:8080';
+        const API_BASE_URL = ''; // Vite 프록시 사용
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/users/signup`, {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 // 사용자 정보의 타입을 정의합니다.
 interface User {
+  id: string;
   username: string;
   nickname: string;
   role: string;
@@ -16,16 +17,13 @@ const SignupApprove: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 컴포넌트 마운트 시 API 호출
+  // 컴포넌트 마운트 시 프록시를 통해 데이터 가져오기
   useEffect(() => {
-    const API_BASE_URL = 'http://localhost:8080';
-    const token = localStorage.getItem('authToken');
     setLoading(true);
-    fetch(`${API_BASE_URL}/api/admin/users/pending`, {
+    fetch('/api/admin/users/pending', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
       }
     })
       .then(response => {
@@ -50,20 +48,16 @@ const SignupApprove: React.FC = () => {
       });
   }, []);
 
-  // 승인/거부 버튼 클릭 핸들러 (실제 API 호출 로직 포함)
+  // 승인/거부 버튼 클릭 핸들러 (프록시를 통한 호출)
   const handleApprove = async (userEmail: string) => {
-    const API_BASE_URL = 'http://localhost:8080';
-    const token = localStorage.getItem('authToken');
-    
     try {
       const user = users.find(u => u.email === userEmail);
       if (!user) return;
       
-      const response = await fetch(`${API_BASE_URL}/api/admin/users/${user.id}/approve`, {
+      const response = await fetch(`/api/admin/users/${user.id}/approve`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -81,18 +75,14 @@ const SignupApprove: React.FC = () => {
   };
 
   const handleDeny = async (userEmail: string) => {
-    const API_BASE_URL = 'http://localhost:8080';
-    const token = localStorage.getItem('authToken');
-    
     try {
       const user = users.find(u => u.email === userEmail);
       if (!user) return;
       
-      const response = await fetch(`${API_BASE_URL}/api/admin/users/${user.id}/deny`, {
+      const response = await fetch(`/api/admin/users/${user.id}/deny`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         }
       });
       

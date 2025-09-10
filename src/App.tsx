@@ -90,7 +90,7 @@ function App() {
       if (authToken) {
         try {
           // 토큰이 있으면 사용자 정보를 다시 가져와서 Redux에 저장
-          const response = await fetch('http://localhost:8080/api/users/me', {
+          const response = await fetch('/api/users/me', { // Vite 프록시 사용
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
