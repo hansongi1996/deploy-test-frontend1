@@ -16,7 +16,7 @@ const MemberManage: React.FC = () => {
 
   // 2. 컴포넌트가 처음 마운트될 때 API를 호출합니다.
   useEffect(() => {
-    const API_BASE_URL = 'http://localhost:8080';
+    const API_BASE_URL = 'http://localhost:3001';
     
     const token = localStorage.getItem('authToken')
     fetch(`${API_BASE_URL}/api/admin/users`, {

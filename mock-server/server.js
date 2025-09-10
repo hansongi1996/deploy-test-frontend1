@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3002;
+const PORT = 3001;
 const JWT_SECRET = 'your-secret-key-change-in-production';
 
 // Middleware
@@ -364,11 +364,62 @@ app.get('/api/users/me', authenticateToken, (req, res) => {
   res.json(userWithoutPassword);
 });
 
-// 회원가입 API
+// 프론트엔드에서 호출하는 엔드포인트 추가
+app.get('/api/auth/me', authenticateToken, (req, res) => {
+  console.log('👤 GET /api/auth/me - 현재 사용자 정보');
+  const user = users.find(u => u.id === req.user.id);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  const { password: _, ...userWithoutPassword } = user;
+  res.json(userWithoutPassword);
+});
+
+// 회원가입 API (기존)
 app.post('/api/users/signup', (req, res) => {
   const { username, nickname, email, password } = req.body;
   
   console.log('📝 POST /api/users/signup - 회원가입 시도:', email);
+  
+  // 이메일 중복 확인
+  const existingUser = users.find(u => u.email === email);
+  if (existingUser) {
+    return res.status(400).json({ error: 'Email already exists' });
+  }
+  
+  // 새 사용자 생성
+  const newUser = {
+    id: users.length + 1,
+    username,
+    nickname,
+    email,
+    password,
+    fullName: username,
+    role: 'STUDENT',
+    status: 'PENDING'
+  };
+  
+  users.push(newUser);
+  
+  console.log('✅ 회원가입 성공:', email);
+  res.status(201).json({ 
+    message: 'User registered successfully. Please wait for admin approval.',
+    user: {
+      id: newUser.id,
+      username: newUser.username,
+      nickname: newUser.nickname,
+      email: newUser.email,
+      role: newUser.role,
+      status: newUser.status
+    }
+  });
+});
+
+// 프론트엔드에서 호출하는 회원가입 엔드포인트 추가
+app.post('/api/auth/signup', (req, res) => {
+  const { username, nickname, email, password } = req.body;
+  
+  console.log('📝 POST /api/auth/signup - 회원가입 시도:', email);
   
   // 이메일 중복 확인
   const existingUser = users.find(u => u.email === email);

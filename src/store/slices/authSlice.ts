@@ -48,7 +48,7 @@ interface AuthState {
 
 const initialState: AuthState = {
   user: null,
-  isLoading: false, // 초기 로딩 상태를 false로 변경
+  isLoading: true, // 초기 로딩 상태를 true로 변경
   error: null,
   isAuthenticated: false,
 };
