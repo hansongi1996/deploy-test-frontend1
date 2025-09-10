@@ -27,12 +27,7 @@ const HomePage: React.FC = () => {
       setRooms(data);
     } catch (error) {
       console.error('Failed to load rooms:', error);
-      // Fallback to placeholder data
-      const placeholderRooms: ChatRoom[] = [
-        { id: 1, roomName: 'General', type: 'GROUP', createdAt: new Date().toISOString() },
-        { id: 2, roomName: 'TypeScript Talk', type: 'GROUP', createdAt: new Date().toISOString() },
-      ];
-      setRooms(placeholderRooms);
+      setRooms([]);
     } finally {
       setLoading(false);
     }
@@ -88,9 +83,9 @@ const HomePage: React.FC = () => {
 
         <Card.Title>Available Chat Rooms</Card.Title>
         <ListGroup className="mb-3">
-          {rooms.map((room: ChatRoom) => (
+          {rooms.map((room: ChatRoom, index: number) => (
             <ListGroup.Item
-              key={room.id}
+              key={`${room.id}-${index}`}
               className="d-flex justify-content-between align-items-center"
             >
               <div>
