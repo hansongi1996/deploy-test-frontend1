@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { ChatRoom, ChatRoomType, ChatRoomParticipant, Assignment, AssignmentSubmission, Notice, LoginRequest, LoginResponse } from './types';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: 'http://localhost:8080/api',
 });
 
 // Request interceptor to add auth token

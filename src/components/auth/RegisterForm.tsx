@@ -32,10 +32,10 @@ const RegisterForm = () => {
 
         console.log("회원가입 데이터:", userData);
 
-        const API_BASE_URL = 'http://localhost:3001';
+        const API_BASE_URL = 'http://localhost:8080';
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+            const response = await fetch(`${API_BASE_URL}/api/users/signup`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

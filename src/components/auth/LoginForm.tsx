@@ -29,7 +29,7 @@ const LoginForm = () => {
             password: formData.password.trim(),
         };
 
-        const API_BASE_URL = 'http://localhost:3001';
+        const API_BASE_URL = 'http://localhost:8080';
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
@@ -46,7 +46,7 @@ const LoginForm = () => {
                 const token = await response.text(); 
                 localStorage.setItem('authToken', token);
                 
-                const userInfoResponse = await fetch(`${API_BASE_URL}/api/auth/me`, {
+                const userInfoResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',

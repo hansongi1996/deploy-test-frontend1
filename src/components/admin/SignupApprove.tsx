@@ -18,7 +18,7 @@ const SignupApprove: React.FC = () => {
 
   // 컴포넌트 마운트 시 API 호출
   useEffect(() => {
-    const API_BASE_URL = 'http://localhost:3001';
+    const API_BASE_URL = 'http://localhost:8080';
     const token = localStorage.getItem('authToken');
     setLoading(true);
     fetch(`${API_BASE_URL}/api/admin/users/pending`, {
@@ -52,7 +52,7 @@ const SignupApprove: React.FC = () => {
 
   // 승인/거부 버튼 클릭 핸들러 (실제 API 호출 로직 포함)
   const handleApprove = async (userEmail: string) => {
-    const API_BASE_URL = 'http://localhost:3001';
+    const API_BASE_URL = 'http://localhost:8080';
     const token = localStorage.getItem('authToken');
     
     try {
@@ -81,7 +81,7 @@ const SignupApprove: React.FC = () => {
   };
 
   const handleDeny = async (userEmail: string) => {
-    const API_BASE_URL = 'http://localhost:3001';
+    const API_BASE_URL = 'http://localhost:8080';
     const token = localStorage.getItem('authToken');
     
     try {

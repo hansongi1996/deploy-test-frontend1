@@ -16,7 +16,7 @@ class SocketService {
   private resolveReady!: () => void;
 
   constructor(
-    baseUrl: string = 'http://localhost:3001',
+    baseUrl: string = 'http://localhost:8080',
     endpoint: string = '/stomp'
   ) {
     this.readyPromise = new Promise<void>((res) => (this.resolveReady = res));
