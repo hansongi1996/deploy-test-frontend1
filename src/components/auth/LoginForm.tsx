@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { setUserData } from "../../store/slices/authSlice"; 
+import { setUserData } from "../../store/slices/authSlice";
 
 const LoginForm = () => {
     const navigate = useNavigate();
@@ -42,10 +42,11 @@ const LoginForm = () => {
 
             if (response.ok) {
                 console.log("로그인 성공");
-                
-                const token = await response.text(); 
+
+                const data: { accessToken: string } = await response.json(); // 응답을 JSON으로 파싱
+                const token = data.accessToken; // accessToken 속성에서 토큰 추출
                 localStorage.setItem('authToken', token);
-                
+
                 const userInfoResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
                     method: 'GET',
                     headers: {
@@ -59,15 +60,15 @@ const LoginForm = () => {
                 }
 
                 const userInfoData = await userInfoResponse.json();
-                
+
                 // 사용자 정보를 완전히 저장
-                dispatch(setUserData({ 
+                dispatch(setUserData({
                     id: userInfoData.id,
                     username: userInfoData.username,
                     fullName: userInfoData.fullName || userInfoData.username,
                     email: userInfoData.email,
-                    role: userInfoData.role, 
-                    token: token 
+                    role: userInfoData.role,
+                    token: token
                 }));
 
                 if (userInfoData.role === "ADMIN" || userInfoData.role === "INSTRUCTOR") {
@@ -90,7 +91,7 @@ const LoginForm = () => {
                     const errorText = await response.text();
                     errorMessage = `로그인에 실패했습니다: ${errorText}`;
                 }
-                
+
                 console.error("로그인 실패:", errorMessage);
                 alert(errorMessage);
             }
@@ -107,7 +108,7 @@ const LoginForm = () => {
                     <h3 className="text-lg text-gray-600 mb-1">SK쉴더스 루키즈 메신저</h3>
                     <p className="text-sm text-gray-500">계정에 로그인하여 시작하세요</p>
                 </div>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
                         <div>
@@ -125,7 +126,7 @@ const LoginForm = () => {
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                             />
                         </div>
-                        
+
                         <div>
                             <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="password">
                                 비밀번호
@@ -140,50 +141,50 @@ const LoginForm = () => {
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                             />
                         </div>
-                        
+
                         <div className="flex items-center justify-between">
                             <div className="flex items-center">
-                                <input 
-                                    type="checkbox" 
-                                    id="remember-me" 
-                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                                <input
+                                    type="checkbox"
+                                    id="remember-me"
+                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                 />
                                 <label className="ml-2 text-sm text-gray-600" htmlFor="remember-me">
                                     로그인 상태 유지
                                 </label>
                             </div>
                         </div>
-                        
-                        <button 
-                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" 
+
+                        <button
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                             type="submit"
                         >
                             로그인
                         </button>
                     </div>
                 </form>
-                
+
                 <div className="mt-6 space-y-3">
                     <div className="text-center">
-                        <Link 
-                            to="/findPassword" 
+                        <Link
+                            to="/findPassword"
                             className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
                         >
                             비밀번호를 잊으셨나요?
                         </Link>
                     </div>
-                    
+
                     <div className="text-center">
                         <span className="text-sm text-gray-600">계정이 없으신가요? </span>
-                        <Link 
-                            to="/register" 
+                        <Link
+                            to="/register"
                             className="text-sm text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
                         >
                             회원가입
                         </Link>
                     </div>
                 </div>
-                
+
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                     <p className="text-xs text-gray-500 text-center mb-1">테스트 계정</p>
                     <p className="text-xs text-gray-600 text-center">이메일: test@example.com</p>
