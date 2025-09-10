@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3001;
+const PORT = 3002;
 const JWT_SECRET = 'your-secret-key-change-in-production';
 
 // Middleware
@@ -253,31 +253,68 @@ let submissions = [
   }
 ];
 
-// Mock users for authentication
+// Mock users for authentication (SKRookies 스타일)
 const users = [
   {
     id: 1,
     username: 'student1',
+    nickname: '김학생',
     password: 'password123',
     fullName: '김학생',
     email: 'student1@example.com',
-    role: 'STUDENT'
+    role: 'STUDENT',
+    status: 'APPROVED'
   },
   {
     id: 2,
     username: 'instructor1',
+    nickname: '이강사',
     password: 'password123',
     fullName: '이강사',
     email: 'instructor1@example.com',
-    role: 'INSTRUCTOR'
+    role: 'INSTRUCTOR',
+    status: 'APPROVED'
   },
   {
     id: 3,
     username: 'admin1',
+    nickname: '박관리자',
     password: 'password123',
     fullName: '박관리자',
     email: 'admin1@example.com',
-    role: 'ADMIN'
+    role: 'ADMIN',
+    status: 'APPROVED'
+  },
+  {
+    id: 4,
+    username: 'test',
+    nickname: '테스트유저',
+    password: 'password123',
+    fullName: '테스트유저',
+    email: 'test@example.com',
+    role: 'STUDENT',
+    status: 'APPROVED'
+  },
+  // 대기 중인 사용자들
+  {
+    id: 5,
+    username: 'pending1',
+    nickname: '대기유저1',
+    password: 'password123',
+    fullName: '대기유저1',
+    email: 'pending1@example.com',
+    role: 'STUDENT',
+    status: 'PENDING'
+  },
+  {
+    id: 6,
+    username: 'pending2',
+    nickname: '대기유저2',
+    password: 'password123',
+    fullName: '대기유저2',
+    email: 'pending2@example.com',
+    role: 'STUDENT',
+    status: 'PENDING'
   }
 ];
 
@@ -286,16 +323,20 @@ let roomAccessLog = [];
 
 // Routes
 
-// Auth Routes
+// Auth Routes (SKRookies 스타일)
 app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
   
-  console.log('🔐 POST /api/auth/login - 로그인 시도');
+  console.log('🔐 POST /api/auth/login - 로그인 시도:', email);
   
-  const user = users.find(u => u.username === username && u.password === password);
+  const user = users.find(u => u.email === email && u.password === password);
   
   if (!user) {
     return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  
+  if (user.status !== 'APPROVED') {
+    return res.status(403).json({ error: 'Account not approved yet' });
   }
   
   const token = jwt.sign(
@@ -308,12 +349,58 @@ app.post('/api/auth/login', (req, res) => {
     { expiresIn: '24h' }
   );
   
+  // SKRookies 스타일로 토큰만 반환
+  res.send(token);
+});
+
+// SKRookies 스타일 사용자 정보 조회
+app.get('/api/users/me', authenticateToken, (req, res) => {
+  console.log('👤 GET /api/users/me - 현재 사용자 정보');
+  const user = users.find(u => u.id === req.user.id);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
   const { password: _, ...userWithoutPassword } = user;
+  res.json(userWithoutPassword);
+});
+
+// 회원가입 API
+app.post('/api/users/signup', (req, res) => {
+  const { username, nickname, email, password } = req.body;
   
-  res.json({
-    user: userWithoutPassword,
-    token,
-    expiresIn: 86400 // 24 hours in seconds
+  console.log('📝 POST /api/users/signup - 회원가입 시도:', email);
+  
+  // 이메일 중복 확인
+  const existingUser = users.find(u => u.email === email);
+  if (existingUser) {
+    return res.status(400).json({ error: 'Email already exists' });
+  }
+  
+  // 새 사용자 생성
+  const newUser = {
+    id: users.length + 1,
+    username,
+    nickname,
+    email,
+    password,
+    fullName: username,
+    role: 'STUDENT',
+    status: 'PENDING'
+  };
+  
+  users.push(newUser);
+  
+  console.log('✅ 회원가입 성공:', email);
+  res.status(201).json({ 
+    message: 'User registered successfully. Please wait for admin approval.',
+    user: {
+      id: newUser.id,
+      username: newUser.username,
+      nickname: newUser.nickname,
+      email: newUser.email,
+      role: newUser.role,
+      status: newUser.status
+    }
   });
 });
 
@@ -322,13 +409,81 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-app.get('/api/auth/me', authenticateToken, (req, res) => {
-  console.log('👤 GET /api/auth/me - 현재 사용자 정보');
-  const user = users.find(u => u.id === req.user.id);
+// 관리자 기능 API들
+app.get('/api/admin/users/pending', authenticateToken, (req, res) => {
+  console.log('👥 GET /api/admin/users/pending - 대기 중인 사용자 목록');
+  
+  // 관리자 권한 확인
+  if (req.user.role !== 'ADMIN' && req.user.role !== 'INSTRUCTOR') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  const pendingUsers = users.filter(user => user.status === 'PENDING');
+  const usersWithoutPassword = pendingUsers.map(user => {
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  });
+  
+  res.json(usersWithoutPassword);
+});
+
+app.get('/api/admin/users', authenticateToken, (req, res) => {
+  console.log('👥 GET /api/admin/users - 전체 사용자 목록');
+  
+  // 관리자 권한 확인
+  if (req.user.role !== 'ADMIN' && req.user.role !== 'INSTRUCTOR') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  const usersWithoutPassword = users.map(user => {
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  });
+  
+  res.json(usersWithoutPassword);
+});
+
+// 사용자 승인 API
+app.patch('/api/admin/users/:userId/approve', authenticateToken, (req, res) => {
+  const userId = parseInt(req.params.userId);
+  
+  console.log(`✅ PATCH /api/admin/users/${userId}/approve - 사용자 승인`);
+  
+  // 관리자 권한 확인
+  if (req.user.role !== 'ADMIN' && req.user.role !== 'INSTRUCTOR') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  const user = users.find(u => u.id === userId);
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
-  const { password: _, ...userWithoutPassword } = user;
+  
+  user.status = 'APPROVED';
+  
+  const { password, ...userWithoutPassword } = user;
+  res.json(userWithoutPassword);
+});
+
+// 사용자 거부 API
+app.patch('/api/admin/users/:userId/deny', authenticateToken, (req, res) => {
+  const userId = parseInt(req.params.userId);
+  
+  console.log(`❌ PATCH /api/admin/users/${userId}/deny - 사용자 거부`);
+  
+  // 관리자 권한 확인
+  if (req.user.role !== 'ADMIN' && req.user.role !== 'INSTRUCTOR') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  const user = users.find(u => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  
+  user.status = 'DENIED';
+  
+  const { password, ...userWithoutPassword } = user;
   res.json(userWithoutPassword);
 });
 
@@ -700,8 +855,19 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Assignment Mock Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 PeerFlow Mock Server is running on http://localhost:${PORT}`);
   console.log(`📋 Available endpoints:`);
+  console.log(`   🔐 Auth:`);
+  console.log(`   POST   /api/auth/login - 로그인`);
+  console.log(`   POST   /api/auth/logout - 로그아웃`);
+  console.log(`   GET    /api/users/me - 사용자 정보 조회`);
+  console.log(`   POST   /api/users/signup - 회원가입`);
+  console.log(`   👥 Admin:`);
+  console.log(`   GET    /api/admin/users/pending - 대기 중인 사용자 목록`);
+  console.log(`   GET    /api/admin/users - 전체 사용자 목록`);
+  console.log(`   PATCH  /api/admin/users/:userId/approve - 사용자 승인`);
+  console.log(`   PATCH  /api/admin/users/:userId/deny - 사용자 거부`);
+  console.log(`   📚 Assignments:`);
   console.log(`   GET    /api/assignments - 과제 목록 조회`);
   console.log(`   GET    /api/assignments/:id - 과제 상세 조회`);
   console.log(`   POST   /api/assignments - 과제 생성`);
@@ -709,5 +875,22 @@ app.listen(PORT, () => {
   console.log(`   POST   /api/assignments/:id/submissions - 과제 제출`);
   console.log(`   POST   /api/upload - 파일 업로드`);
   console.log(`   PATCH  /api/submissions/:id - 과제 채점`);
+  console.log(`   📢 Notices:`);
+  console.log(`   GET    /api/notices - 공지사항 목록`);
+  console.log(`   GET    /api/notices/:id - 공지사항 상세`);
+  console.log(`   POST   /api/notices - 공지사항 작성`);
+  console.log(`   PUT    /api/notices/:id - 공지사항 수정`);
+  console.log(`   DELETE /api/notices/:id - 공지사항 삭제`);
+  console.log(`   💬 Chat:`);
+  console.log(`   GET    /api/chatrooms - 채팅방 목록`);
+  console.log(`   POST   /api/chatrooms - 채팅방 생성`);
+  console.log(`   POST   /api/chatrooms/:roomId/join - 채팅방 참여`);
+  console.log(`   POST   /api/chatrooms/:roomId/leave - 채팅방 퇴장`);
+  console.log(`   GET    /api/chatrooms/:roomId/participants - 참여자 목록`);
+  console.log(`   🔧 Health:`);
   console.log(`   GET    /health - 서버 상태 확인`);
+  console.log(`\n🧪 Test Accounts:`);
+  console.log(`   👨‍🎓 Student: test@example.com / password123`);
+  console.log(`   👨‍🏫 Instructor: instructor1@example.com / password123`);
+  console.log(`   👨‍💼 Admin: admin1@example.com / password123`);
 });

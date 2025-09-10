@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert, Spinner, Badge, ProgressBar, Tab, Tabs, ListGroup } from 'react-bootstrap';
 import { getAssignments, submitAssignment, uploadFile } from '../api';
-import type { Assignment, AssignmentSubmission } from '../types';
+import type { Assignment } from '../types';
 
 const AssignmentPage: React.FC = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);

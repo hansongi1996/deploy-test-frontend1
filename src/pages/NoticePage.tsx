@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Alert, Spinner, Modal, Form, Badge } from 'react-bootstrap';
 import { getNotices, getNotice, createNotice, updateNotice, deleteNotice } from '../api';
-import { useAuth } from '../contexts/AuthContext';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../store';
 import type { Notice } from '../types';
 
 const NoticePage: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

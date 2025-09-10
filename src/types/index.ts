@@ -96,3 +96,32 @@ export interface Notice {
   createdAt: string;
   updatedAt: string;
 }
+
+// Login Component Interface
+export interface LoginComponentProps {
+  onLogin: (credentials: LoginRequest) => Promise<boolean>;
+  isLoading: boolean;
+  error?: string | null;
+  onErrorDismiss?: () => void;
+}
+
+// Redux 기반 로그인 컴포넌트 Props (선택적)
+export interface ReduxLoginComponentProps {
+  // Redux hooks를 직접 사용할 수 있도록 함
+  useReduxAuth?: () => {
+    user: AuthUser | null;
+    login: (credentials: LoginRequest) => Promise<boolean>;
+    logout: () => void;
+    isLoading: boolean;
+    isAuthenticated: boolean;
+    error: string | null;
+    clearError: () => void;
+  };
+}
+
+export interface LoginComponent {
+  component: React.ComponentType<LoginComponentProps | ReduxLoginComponentProps>;
+  name: string;
+  description?: string;
+  useRedux?: boolean; // Redux 사용 여부
+}
