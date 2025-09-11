@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ChatRoom, ChatRoomType, ChatRoomParticipant, Assignment, AssignmentSubmission, Notice, LoginRequest, LoginResponse } from './types';
+import type { ChatRoom, ChatRoomType, ChatRoomParticipant, ChatMessage, Assignment, AssignmentSubmission, Notice, LoginRequest, LoginResponse } from './types';
 
 const api = axios.create({
   baseURL: '/api', // Vite 프록시 사용

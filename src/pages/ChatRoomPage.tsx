@@ -15,6 +15,7 @@ const ChatRoomPage: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [participants, setParticipants] = useState<ChatRoomParticipant[]>([]);
   const [loading, setLoading] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const subscribedRef = useRef(false);
   const processedMessageIds = useRef<Set<number>>(new Set());
@@ -52,37 +53,26 @@ const ChatRoomPage: React.FC = () => {
         
         // 3. 채팅 히스토리 로드 시도 (실패해도 계속 진행)
         try {
+          setMessagesLoading(true);
           const messageData = await getChatMessages(parseInt(roomId));
-          setMessages(messageData);
-          console.log('Successfully loaded chat history');
+          // 메시지를 시간순으로 정렬 (오래된 것부터)
+          const sortedMessages = messageData.sort((a, b) => 
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          setMessages(sortedMessages);
+          console.log('Successfully loaded chat history:', sortedMessages.length, 'messages');
         } catch (historyError) {
           console.warn('Failed to load chat history:', historyError);
-          // 플레이스홀더 메시지로 설정
-          const placeholderMessages: ChatMessage[] = [
-            {
-              id: 1,
-              content: 'Welcome to the chat! (History unavailable)',
-              createdAt: new Date().toISOString(),
-              sender: { id: 0, username: 'System', fullName: 'System' },
-              messageType: 'TEXT',
-            },
-          ];
-          setMessages(placeholderMessages);
+          // 빈 메시지 배열로 설정 (플레이스홀더 제거)
+          setMessages([]);
+        } finally {
+          setMessagesLoading(false);
         }
         
       } catch (error) {
         console.error('Unexpected error during room initialization:', error);
-        // 최소한의 플레이스홀더 메시지 설정
-        const placeholderMessages: ChatMessage[] = [
-          {
-            id: 1,
-            content: 'Welcome to the chat!',
-            createdAt: new Date().toISOString(),
-            sender: { id: 0, username: 'System', fullName: 'System' },
-            messageType: 'TEXT',
-          },
-        ];
-        setMessages(placeholderMessages);
+        // 빈 메시지 배열로 설정
+        setMessages([]);
       } finally {
         setLoading(false);
       }
@@ -185,6 +175,7 @@ const ChatRoomPage: React.FC = () => {
       if (unsubscribe) unsubscribe();
       subscribedRef.current = false;
       processedMessageIds.current.clear(); // 처리된 메시지 ID 목록 초기화
+      setMessagesLoading(true); // 메시지 로딩 상태 초기화
       socketService.disconnect();
       // Note: 자동으로 leave API를 호출하지 않음
       // 사용자가 명시적으로 "Leave Room" 버튼을 클릭할 때만 호출
@@ -254,8 +245,8 @@ const ChatRoomPage: React.FC = () => {
 
       {/* Main Content */}
       <div className="d-flex flex-grow-1">
-        {/* Left Panel - Chat List (Same as HomePage) */}
-        <div className="bg-light border-end d-flex flex-column" style={{ width: '280px', minWidth: '280px', height: 'calc(100vh - 80px)' }}>
+        {/* Left Panel - Chat List (Fixed) */}
+        <div className="bg-light border-end d-flex flex-column" style={{ position: 'fixed', width: '280px', height: 'calc(100vh - 80px)', left: 0, top: '80px', zIndex: 1000 }}>
           {/* Chat Header */}
           <div className="p-3 border-bottom">
             <div className="d-flex justify-content-between align-items-center">
@@ -287,7 +278,7 @@ const ChatRoomPage: React.FC = () => {
         </div>
 
         {/* Right Panel - Chat Room */}
-        <div className="flex-grow-1 d-flex flex-column">
+        <div className="d-flex flex-column" style={{ marginLeft: '280px', width: 'calc(100vw - 280px)', height: 'calc(100vh - 80px)' }}>
         {/* Chat Header */}
         <div className="d-flex justify-content-between align-items-center p-3 border-bottom bg-white">
           <div className="d-flex align-items-center">
@@ -322,7 +313,14 @@ const ChatRoomPage: React.FC = () => {
 
         {/* Messages Area */}
         <div className="flex-grow-1 overflow-auto p-3 bg-light">
-          {messages.length === 0 ? (
+          {messagesLoading ? (
+            <div className="text-center text-muted p-5">
+              <div className="spinner-border text-primary mb-3" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p>이전 채팅 기록을 불러오는 중...</p>
+            </div>
+          ) : messages.length === 0 ? (
             <div className="text-center text-muted p-5">
               <i className="bi bi-chat-dots mb-3" style={{ fontSize: '3rem' }}></i>
               <p>아직 메시지가 없습니다. 대화를 시작해보세요!</p>

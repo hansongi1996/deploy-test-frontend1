@@ -135,8 +135,8 @@ const HomePage: React.FC = () => {
 
       {/* Main Content */}
       <div className="d-flex flex-grow-1">
-        {/* Left Panel - Navigation Sidebar */}
-        <div className="bg-light border-end d-flex flex-column" style={{ width: '280px', minWidth: '280px', height: 'calc(100vh - 80px)' }}>
+        {/* Left Panel - Navigation Sidebar (Fixed) */}
+        <div className="bg-light border-end d-flex flex-column" style={{ position: 'fixed', width: '280px', height: 'calc(100vh - 80px)', left: 0, top: '80px', zIndex: 1000 }}>
           {/* Main Navigation Tabs */}
           <div className="d-flex border-bottom">
             <Button 
@@ -195,7 +195,7 @@ const HomePage: React.FC = () => {
           {/* Chat Rooms List (채팅 탭일 때만 표시) */}
           {activeTab === 'chat' && (
             <>
-              <div className="flex-grow-1 overflow-auto" style={{ maxHeight: '400px' }}>
+              <div className="flex-grow-1 overflow-auto" style={{ maxHeight: '600px' }}>
                 {filteredRooms.length > 0 ? (
                   filteredRooms.map((room: ChatRoom, index: number) => (
                     <div
@@ -313,7 +313,7 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Right Panel - Content Area */}
-        <div className="flex-grow-1 d-flex align-items-center justify-content-center bg-white p-4">
+        <div className="d-flex align-items-center justify-content-center bg-white p-4" style={{ marginLeft: '280px', width: 'calc(100vw - 280px)', height: 'calc(100vh - 80px)' }}>
           {activeTab === 'chat' ? (
             <div className="text-center" style={{ maxWidth: '500px' }}>
               <div className="mb-5">

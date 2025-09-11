@@ -152,8 +152,8 @@ const NoticePage: React.FC = () => {
       <Header />
       
       <div className="d-flex flex-grow-1">
-        {/* Left Panel - Navigation Sidebar */}
-        <div className="bg-light border-end d-flex flex-column" style={{ width: '280px', minWidth: '280px', height: 'calc(100vh - 80px)' }}>
+        {/* Left Panel - Navigation Sidebar (Fixed) */}
+        <div className="bg-light border-end d-flex flex-column" style={{ position: 'fixed', width: '280px', height: 'calc(100vh - 80px)', left: 0, top: '80px', zIndex: 1000 }}>
           {/* Main Navigation Tabs */}
           <div className="d-flex border-bottom">
             <Button 
@@ -189,7 +189,7 @@ const NoticePage: React.FC = () => {
         </div>
 
         {/* Right Panel - Notice Content */}
-        <div className="flex-grow-1 d-flex flex-column">
+        <div className="d-flex flex-column" style={{ marginLeft: '280px', width: 'calc(100vw - 280px)', height: 'calc(100vh - 80px)' }}>
           {/* Notice Header */}
           <div className="bg-white border-bottom py-4 px-4">
             <div className="d-flex justify-content-between align-items-center">
