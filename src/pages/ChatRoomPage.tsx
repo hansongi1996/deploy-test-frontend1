@@ -103,47 +103,39 @@ const ChatRoomPage: React.FC = () => {
         
         console.log('Subscribing to:', `/topic/chat/rooms/${roomId}`);
         
-        // 여러 가능한 토픽을 구독해보기
-        const topics = [
-          `/topic/chat/rooms/${roomId}`,
-          `/topic/rooms/${roomId}`,
-          `/topic/chat/${roomId}`,
-          `/topic/messages/${roomId}`,
-          `/topic/room/${roomId}`
-        ];
+        // 기본 토픽만 구독 (서버 에러 방지)
+        const primaryTopic = `/topic/chat/rooms/${roomId}`;
         
         const subscriptions: any[] = [];
-        for (const topic of topics) {
-          console.log('Subscribing to topic:', topic);
-          const sub = await socketService.subscribe(topic, (message) => {
-            console.log(`[CHAT] Message received on topic ${topic}:`, message);
-            console.log('[CHAT] Message body:', message.body);
-            console.log('[CHAT] Message headers:', message.headers);
-            
-            try {
-              const raw = JSON.parse(message.body);
-              console.log('[CHAT] Parsed message:', raw);
-              const newMessage: ChatMessage = {
-                id: raw.id ?? Math.floor(Math.random() * 1e9),
-                content: raw.content ?? '',
-                createdAt: raw.createdAt ?? new Date().toISOString(),
-                sender: raw.sender ?? { id: 0, username: 'Unknown', fullName: 'Unknown' },
-                messageType: raw.messageType ?? 'TEXT',
-              };
-              console.log('[CHAT] Creating new message:', newMessage);
-              setMessages((prev) => {
-                console.log('[CHAT] Previous messages:', prev);
-                const updated = [...prev, newMessage];
-                console.log('[CHAT] Updated messages:', updated);
-                return updated;
-              });
-            } catch (e) {
-              console.error('Failed to parse message', e);
-              console.error('Raw message body:', message.body);
-            }
-          });
-          subscriptions.push(sub);
-        }
+        console.log('Subscribing to topic:', primaryTopic);
+        const sub = await socketService.subscribe(primaryTopic, (message) => {
+          console.log(`[CHAT] Message received on topic ${primaryTopic}:`, message);
+          console.log('[CHAT] Message body:', message.body);
+          console.log('[CHAT] Message headers:', message.headers);
+          
+          try {
+            const raw = JSON.parse(message.body);
+            console.log('[CHAT] Parsed message:', raw);
+            const newMessage: ChatMessage = {
+              id: raw.id ?? Math.floor(Math.random() * 1e9),
+              content: raw.content ?? '',
+              createdAt: raw.createdAt ?? new Date().toISOString(),
+              sender: raw.sender ?? { id: 0, username: 'Unknown', fullName: 'Unknown' },
+              messageType: raw.messageType ?? 'TEXT',
+            };
+            console.log('[CHAT] Creating new message:', newMessage);
+            setMessages((prev) => {
+              console.log('[CHAT] Previous messages:', prev);
+              const updated = [...prev, newMessage];
+              console.log('[CHAT] Updated messages:', updated);
+              return updated;
+            });
+          } catch (e) {
+            console.error('Failed to parse message', e);
+            console.error('Raw message body:', message.body);
+          }
+        });
+        subscriptions.push(sub);
         
         unsubscribe = () => {
           subscriptions.forEach(sub => sub.unsubscribe());
@@ -153,6 +145,7 @@ const ChatRoomPage: React.FC = () => {
         console.error('Failed to establish WebSocket connection:', socketError);
         console.error('Socket error details:', socketError);
         // WebSocket 연결 실패해도 채팅 UI는 계속 작동
+        console.warn('Continuing without WebSocket - messages will not be received in real-time');
       }
     })();
 
@@ -170,53 +163,39 @@ const ChatRoomPage: React.FC = () => {
   }, [messages]);
 
   const handleSendMessage = async (content: string) => {
-    // 여러 가능한 메시지 형식 시도
-    const messageFormats = [
-      // 형식 1: 현재 형식
-      { 
-        content, 
-        roomId: roomId ? parseInt(roomId) : 0,
-        timestamp: new Date().toISOString()
-      },
-      // 형식 2: 간단한 형식
-      { 
-        message: content,
-        roomId: roomId ? parseInt(roomId) : 0
-      },
-      // 형식 3: 서버가 기대할 수 있는 형식
-      { 
-        text: content,
-        roomId: roomId ? parseInt(roomId) : 0,
-        sender: user?.username || 'unknown'
-      },
-      // 형식 4: 최소한의 형식
-      { 
-        content
-      }
-    ];
+    if (!roomId) {
+      console.error('Room ID is missing');
+      return;
+    }
+
+    // 기본 메시지 형식
+    const messageToSend = { 
+      content, 
+      roomId: parseInt(roomId),
+      timestamp: new Date().toISOString(),
+      sender: user?.username || 'unknown'
+    };
     
-    const endpoints = [
-      `/app/chat/rooms/${roomId}`,
-      `/app/rooms/${roomId}`,
-      `/app/chat/${roomId}`,
-      `/app/messages/${roomId}`,
-      `/app/room/${roomId}`
-    ];
+    const endpoint = `/app/chat/rooms/${roomId}`;
     
-    console.log('Sending message:', messageFormats[0]);
+    console.log('Sending message:', messageToSend);
     console.log('Socket connected:', socketService.connected);
-    
-    // 첫 번째 형식과 엔드포인트로 시도
-    const messageToSend = messageFormats[0];
-    const endpoint = endpoints[0];
     console.log('Publishing to:', endpoint);
-    console.log('Message payload:', JSON.stringify(messageToSend));
     
     try {
-      await socketService.publish(endpoint, JSON.stringify(messageToSend));
+      await socketService.publish(endpoint, messageToSend);
       console.log('✅ Message sent successfully to server');
     } catch (error) {
       console.error('❌ Failed to send message:', error);
+      // WebSocket 실패 시 로컬에 메시지 추가 (임시)
+      const tempMessage: ChatMessage = {
+        id: Math.floor(Math.random() * 1e9),
+        content,
+        createdAt: new Date().toISOString(),
+        sender: { id: user?.id || 0, username: user?.username || 'You', fullName: user?.fullName || 'You' },
+        messageType: 'TEXT',
+      };
+      setMessages(prev => [...prev, tempMessage]);
     }
   };
 
@@ -317,13 +296,15 @@ const ChatRoomPage: React.FC = () => {
             </div>
           ) : (
             <div>
-              {messages.map((msg) => (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  isCurrentUser={msg.sender.username === user?.username}
-                />
-              ))}
+              {messages
+                .filter((msg) => msg && msg.sender && msg.content) // 유효한 메시지만 필터링
+                .map((msg) => (
+                  <MessageBubble
+                    key={msg.id}
+                    message={msg}
+                    isCurrentUser={msg.sender?.username === user?.username}
+                  />
+                ))}
               <div ref={messagesEndRef} />
             </div>
           )}

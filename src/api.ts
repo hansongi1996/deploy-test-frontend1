@@ -50,6 +50,12 @@ export const joinChatRoom = async (roomId: number): Promise<{ message: string }>
   return response.data;
 };
 
+// Delete chat room
+export const deleteChatRoom = async (roomId: number): Promise<{ message: string }> => {
+  const response = await api.delete(`/chatrooms/${roomId}`);
+  return response.data;
+};
+
 // Leave chat room
 export const leaveChatRoom = async (roomId: number): Promise<{ message: string }> => {
   const response = await api.put(`/chatrooms/${roomId}/leave`);

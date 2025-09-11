@@ -22,14 +22,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isCurrentUser })
         {/* Avatar */}
         <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
              style={{ width: '32px', height: '32px', fontSize: '12px', minWidth: '32px' }}>
-          {message.sender.username.charAt(0).toUpperCase()}
+          {message.sender?.username?.charAt(0)?.toUpperCase() || '?'}
         </div>
         
         {/* Message Content */}
         <div className={`mx-2 ${isCurrentUser ? 'text-end' : 'text-start'}`}>
           {!isCurrentUser && (
             <div className="text-muted small mb-1">
-              {message.sender.fullName || message.sender.username}
+              {message.sender?.fullName || message.sender?.username || 'Unknown User'}
             </div>
           )}
           <div 

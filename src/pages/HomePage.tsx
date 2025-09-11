@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Form, InputGroup } from 'react-bootstrap';
-import { getChatRooms, createChatRoom, joinChatRoom } from '../api';
+import { getChatRooms, createChatRoom, joinChatRoom, deleteChatRoom } from '../api';
 import type { ChatRoom, ChatRoomType } from '../types';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
@@ -109,6 +109,26 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const handleDeleteRoom = async (roomId: number, roomName: string) => {
+    if (!window.confirm(`'${roomName}' 채팅방을 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await deleteChatRoom(roomId);
+      
+      // 삭제 성공 후 목록에서 제거
+      setRooms(prev => prev.filter(room => room.id !== roomId));
+      console.log('Successfully deleted room:', roomName);
+    } catch (error: any) {
+      console.error('Failed to delete room:', error);
+      alert(`채팅방 삭제에 실패했습니다: ${error.response?.data?.message || '알 수 없는 오류'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="d-flex flex-column" style={{ height: '100vh' }}>
       <Header />
@@ -182,13 +202,18 @@ const HomePage: React.FC = () => {
                       key={`${room.id}-${index}`}
                       className="d-flex align-items-center p-3 border-bottom hover-bg-light"
                       style={{ cursor: 'pointer' }}
-                      onClick={() => handleJoinRoom(room.id)}
                     >
-                      <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
-                           style={{ width: '50px', height: '50px', fontSize: '18px' }}>
+                      <div 
+                        className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                        style={{ width: '50px', height: '50px', fontSize: '18px' }}
+                        onClick={() => handleJoinRoom(room.id)}
+                      >
                         {room.roomName.charAt(0)}
                       </div>
-                      <div className="flex-grow-1">
+                      <div 
+                        className="flex-grow-1"
+                        onClick={() => handleJoinRoom(room.id)}
+                      >
                         <div className="d-flex justify-content-between align-items-center">
                           <h6 className="mb-1">{room.roomName}</h6>
                           <small className="text-muted">
@@ -203,9 +228,23 @@ const HomePage: React.FC = () => {
                           그룹 채팅
                         </p>
                       </div>
-                      {index === 0 && (
-                        <span className="badge bg-success rounded-pill ms-2">1</span>
-                      )}
+                      <div className="d-flex align-items-center gap-2">
+                        {index === 0 && (
+                          <span className="badge bg-success rounded-pill">1</span>
+                        )}
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="p-1 text-danger"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteRoom(room.id, room.roomName);
+                          }}
+                          disabled={loading}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </Button>
+                      </div>
                     </div>
                   ))
                 ) : (

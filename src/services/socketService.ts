@@ -29,10 +29,8 @@ class SocketService {
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       debug: (msg) => console.log(`[STOMP] ${msg}`),
-      // 인증 헤더 추가
-      connectHeaders: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-      }
+      // 인증 헤더는 connect() 메서드에서 동적으로 설정
+      connectHeaders: {}
     });
 
     this.client.onConnect = () => {
@@ -48,6 +46,10 @@ class SocketService {
 
     this.client.onStompError = (frame) => {
       console.error('[STOMP] BROKER ERROR:', frame.headers['message'], frame.body);
+      // 에러 발생 시 연결 재시도하지 않도록 설정
+      if (frame.headers['message']?.includes('ExecutorSubscribableChannel')) {
+        console.warn('[STOMP] Server broker error detected, will retry connection...');
+      }
     };
 
     // Do not auto-activate here to avoid double connect/subscribe races
@@ -55,7 +57,22 @@ class SocketService {
   }
 
   public async connect(onConnect?: () => void): Promise<void> {
+    // 연결 시점에 토큰을 동적으로 가져와서 헤더에 설정
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      this.client.configure({
+        connectHeaders: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      console.log('[STOMP] Token found, setting Authorization header');
+      console.log('[STOMP] Token preview:', token.substring(0, 20) + '...');
+    } else {
+      console.warn('[STOMP] No auth token found, connecting without authentication');
+    }
+
     if (!this.client.active) {
+      console.log('[STOMP] Activating client...');
       this.client.activate();
     }
     await this.readyPromise;
@@ -63,6 +80,16 @@ class SocketService {
   }
 
   private async waitUntilReady(): Promise<void> {
+    // 연결 시점에 토큰을 동적으로 가져와서 헤더에 설정
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      this.client.configure({
+        connectHeaders: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    }
+
     if (!this.client.active) {
       this.client.activate();
     }
@@ -94,21 +121,31 @@ class SocketService {
     console.log('🚀 Publishing message:');
     console.log('  Destination:', destination);
     console.log('  Payload:', payload);
-    console.log('  Headers:', { 
-      'content-type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-    });
     
-    this.client.publish({ 
-      destination, 
-      body: payload, 
-      headers: { 
-        'content-type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-      } 
-    });
+    // 토큰이 있을 때만 Authorization 헤더 추가
+    const token = localStorage.getItem('authToken');
+    const headers: Record<string, string> = { 
+      'content-type': 'application/json'
+    };
     
-    console.log('✅ Message published to STOMP broker');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    console.log('  Headers:', headers);
+    
+    try {
+      this.client.publish({ 
+        destination, 
+        body: payload, 
+        headers
+      });
+      
+      console.log('✅ Message published to STOMP broker');
+    } catch (error) {
+      console.error('❌ Failed to publish message:', error);
+      throw error;
+    }
   }
 }
 
