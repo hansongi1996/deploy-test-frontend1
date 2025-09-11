@@ -52,7 +52,7 @@ export const joinChatRoom = async (roomId: number): Promise<{ message: string }>
 
 // Leave chat room
 export const leaveChatRoom = async (roomId: number): Promise<{ message: string }> => {
-  const response = await api.delete(`/chatrooms/${roomId}/leave`);
+  const response = await api.put(`/chatrooms/${roomId}/leave`);
   return response.data;
 };
 
