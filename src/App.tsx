@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage';
 import ChatRoomPage from './pages/ChatRoomPage';
 import AssignmentPage from './pages/AssignmentPage';
 import NoticePage from './pages/NoticePage';
+import ProfilePage from './pages/ProfilePage';
 import LoginForm from './components/auth/LoginForm';
 import RegisterForm from './components/auth/RegisterForm';
 import FindPassword from './components/auth/FindPassword';
@@ -154,6 +155,11 @@ function App() {
             <Route path="/notices" element={
               <ProtectedRoute>
                 <NoticePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             } />
           </Routes>
