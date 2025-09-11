@@ -35,7 +35,7 @@ api.interceptors.response.use(
 );
 
 export const getChatRooms = async (): Promise<ChatRoom[]> => {
-  const response = await api.get('/chatrooms');
+  const response = await api.get('/all');
   return response.data;
 };
 
@@ -52,13 +52,19 @@ export const joinChatRoom = async (roomId: number): Promise<{ message: string }>
 
 // Leave chat room
 export const leaveChatRoom = async (roomId: number): Promise<{ message: string }> => {
-  const response = await api.post(`/chatrooms/${roomId}/leave`);
+  const response = await api.delete(`/chatrooms/${roomId}/leave`);
   return response.data;
 };
 
 // Get room participants
 export const getRoomParticipants = async (roomId: number): Promise<ChatRoomParticipant[]> => {
   const response = await api.get(`/chatrooms/${roomId}/participants`);
+  return response.data;
+};
+
+// Get chat room messages (history)
+export const getChatMessages = async (roomId: number): Promise<ChatMessage[]> => {
+  const response = await api.get(`/chatrooms/${roomId}/messages`);
   return response.data;
 };
 
@@ -96,7 +102,7 @@ export const uploadFile = async (file: File): Promise<{ fileUrl: string }> => {
   const formData = new FormData();
   formData.append('file', file);
   
-  const response = await api.post('/upload', formData, {
+  const response = await api.post('/files/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

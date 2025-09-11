@@ -16,7 +16,7 @@ class SocketService {
   private resolveReady!: () => void;
 
   constructor(
-    baseUrl: string = 'http://localhost:8080', // 백엔드 서버 사용
+    baseUrl: string = 'http://localhost:8080', // SockJS는 http 사용
     endpoint: string = '/stomp'
   ) {
     this.readyPromise = new Promise<void>((res) => (this.resolveReady = res));
@@ -29,6 +29,10 @@ class SocketService {
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       debug: (msg) => console.log(`[STOMP] ${msg}`),
+      // 인증 헤더 추가
+      connectHeaders: {
+        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+      }
     });
 
     this.client.onConnect = () => {
@@ -86,7 +90,14 @@ class SocketService {
   public async publish(destination: string, body: JSONLike): Promise<void> {
     await this.waitUntilReady();
     const payload = typeof body === 'string' ? body : JSON.stringify(body);
-    this.client.publish({ destination, body: payload, headers: { 'content-type': 'application/json' } });
+    this.client.publish({ 
+      destination, 
+      body: payload, 
+      headers: { 
+        'content-type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+      } 
+    });
   }
 }
 
