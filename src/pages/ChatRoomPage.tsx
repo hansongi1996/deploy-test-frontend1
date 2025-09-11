@@ -17,6 +17,7 @@ const ChatRoomPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const subscribedRef = useRef(false);
+  const processedMessageIds = useRef<Set<number>>(new Set());
   
   // Redux에서 사용자 정보 가져오기
   const { user } = useSelector((state: RootState) => state.auth);
@@ -104,7 +105,7 @@ const ChatRoomPage: React.FC = () => {
         console.log('Subscribing to:', `/topic/chat/rooms/${roomId}`);
         
         // 기본 토픽만 구독 (서버 에러 방지)
-        const primaryTopic = `/topic/chat/rooms/${roomId}`;
+        const primaryTopic = `/topic/rooms/${roomId}`;
         
         const subscriptions: any[] = [];
         console.log('Subscribing to topic:', primaryTopic);
@@ -124,10 +125,41 @@ const ChatRoomPage: React.FC = () => {
               messageType: raw.messageType ?? 'TEXT',
             };
             console.log('[CHAT] Creating new message:', newMessage);
+            
+            // 강력한 중복 메시지 방지
             setMessages((prev) => {
               console.log('[CHAT] Previous messages:', prev);
+              
+              // 1. 이미 처리된 메시지 ID인지 확인
+              if (processedMessageIds.current.has(newMessage.id)) {
+                console.log('[CHAT] Message ID already processed, skipping:', newMessage.id);
+                return prev;
+              }
+              
+              // 2. 기존 메시지 중에 같은 ID가 있는지 확인
+              const existingMessage = prev.find(msg => msg.id === newMessage.id);
+              if (existingMessage) {
+                console.log('[CHAT] Message with same ID already exists, skipping:', newMessage.id);
+                return prev;
+              }
+              
+              // 3. 같은 내용+시간+발신자 조합이 있는지 확인
+              const isDuplicate = prev.some(msg => 
+                msg.content === newMessage.content && 
+                msg.createdAt === newMessage.createdAt && 
+                msg.sender?.username === newMessage.sender?.username
+              );
+              
+              if (isDuplicate) {
+                console.log('[CHAT] Duplicate content detected, skipping');
+                return prev;
+              }
+              
+              // 메시지 ID를 처리된 목록에 추가
+              processedMessageIds.current.add(newMessage.id);
+              
               const updated = [...prev, newMessage];
-              console.log('[CHAT] Updated messages:', updated);
+              console.log('[CHAT] Message added successfully:', newMessage.id);
               return updated;
             });
           } catch (e) {
@@ -152,6 +184,7 @@ const ChatRoomPage: React.FC = () => {
     return () => {
       if (unsubscribe) unsubscribe();
       subscribedRef.current = false;
+      processedMessageIds.current.clear(); // 처리된 메시지 ID 목록 초기화
       socketService.disconnect();
       // Note: 자동으로 leave API를 호출하지 않음
       // 사용자가 명시적으로 "Leave Room" 버튼을 클릭할 때만 호출
