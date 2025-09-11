@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Card, Button } from 'react-bootstrap';
+import { useParams } from 'react-router-dom';
+import { Button } from 'react-bootstrap';
 import type { ChatMessage, ChatRoomParticipant } from '../types';
 import { joinChatRoom, leaveChatRoom, getRoomParticipants, getChatMessages } from '../api';
 import socketService from '../services/socketService';
@@ -8,6 +8,7 @@ import MessageBubble from '../components/MessageBubble';
 import MessageInput from '../components/MessageInput';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
+import Header from '../components/Header';
 
 const ChatRoomPage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
@@ -111,7 +112,7 @@ const ChatRoomPage: React.FC = () => {
           `/topic/room/${roomId}`
         ];
         
-        const subscriptions = [];
+        const subscriptions: any[] = [];
         for (const topic of topics) {
           console.log('Subscribing to topic:', topic);
           const sub = await socketService.subscribe(topic, (message) => {
@@ -168,7 +169,7 @@ const ChatRoomPage: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
     // 여러 가능한 메시지 형식 시도
     const messageFormats = [
       // 형식 1: 현재 형식
@@ -209,8 +210,14 @@ const ChatRoomPage: React.FC = () => {
     const messageToSend = messageFormats[0];
     const endpoint = endpoints[0];
     console.log('Publishing to:', endpoint);
+    console.log('Message payload:', JSON.stringify(messageToSend));
     
-    socketService.publish(endpoint, JSON.stringify(messageToSend));
+    try {
+      await socketService.publish(endpoint, JSON.stringify(messageToSend));
+      console.log('✅ Message sent successfully to server');
+    } catch (error) {
+      console.error('❌ Failed to send message:', error);
+    }
   };
 
   const handleLeaveRoom = async () => {
@@ -230,45 +237,104 @@ const ChatRoomPage: React.FC = () => {
   };
 
   return (
-    <div className="d-flex justify-content-center">
-      <Card style={{ width: '100%', maxWidth: '800px' }}>
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <div>
-            <h4>Room #{roomId}</h4>
-            <small className="text-muted">
-              {participants.length} participants
-            </small>
+    <div className="d-flex flex-column" style={{ height: '100vh' }}>
+      <Header />
+
+      {/* Main Content */}
+      <div className="d-flex flex-grow-1">
+        {/* Left Panel - Chat List (Same as HomePage) */}
+        <div className="bg-light border-end d-flex flex-column" style={{ width: '280px', minWidth: '280px', height: 'calc(100vh - 80px)' }}>
+          {/* Chat Header */}
+          <div className="p-3 border-bottom">
+            <div className="d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">채팅</h5>
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="p-1 text-primary"
+                onClick={() => window.location.href = '/'}
+              >
+                <i className="bi bi-search"></i>
+              </Button>
+            </div>
           </div>
+
+
+        {/* Back to Home Button */}
+        <div className="p-3 mt-auto">
           <Button 
-            variant="secondary" 
+            variant="outline-secondary" 
             size="sm" 
-            disabled={loading}
-            onClick={handleLeaveRoom}
+            className="w-100"
+            onClick={() => window.location.href = '/'}
           >
-            {loading ? 'Leaving...' : 'Leave Room'}
+            <i className="bi bi-arrow-left me-2"></i>
+            채팅방 목록으로 돌아가기
           </Button>
-        </Card.Header>
-        <Card.Body style={{ height: '60vh', overflowY: 'auto' }} className="d-flex flex-column">
-          <div className="flex-grow-1">
-            {console.log('Rendering messages:', messages)}
-            {messages.length === 0 ? (
-              <div className="text-center text-muted p-3">
-                <p>No messages yet. Start the conversation!</p>
-              </div>
-            ) : (
-              messages.map((msg) => (
+        </div>
+        </div>
+
+        {/* Right Panel - Chat Room */}
+        <div className="flex-grow-1 d-flex flex-column">
+        {/* Chat Header */}
+        <div className="d-flex justify-content-between align-items-center p-3 border-bottom bg-white">
+          <div className="d-flex align-items-center">
+            <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                 style={{ width: '40px', height: '40px', fontSize: '16px' }}>
+              {roomId?.charAt(0) || 'R'}
+            </div>
+            <div>
+              <h5 className="mb-0">Room #{roomId}</h5>
+              <small className="text-muted">
+                {participants.length}명 참여중
+              </small>
+            </div>
+          </div>
+          <div className="d-flex align-items-center">
+            <Button variant="link" size="sm" className="p-1 me-2">
+              <i className="bi bi-search"></i>
+            </Button>
+            <Button variant="link" size="sm" className="p-1 me-2">
+              <i className="bi bi-three-dots-vertical"></i>
+            </Button>
+            <Button 
+              variant="outline-secondary" 
+              size="sm" 
+              disabled={loading}
+              onClick={handleLeaveRoom}
+            >
+              {loading ? '나가는 중...' : '나가기'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Messages Area */}
+        <div className="flex-grow-1 overflow-auto p-3 bg-light">
+          {messages.length === 0 ? (
+            <div className="text-center text-muted p-5">
+              <i className="bi bi-chat-dots mb-3" style={{ fontSize: '3rem' }}></i>
+              <p>아직 메시지가 없습니다. 대화를 시작해보세요!</p>
+            </div>
+          ) : (
+            <div>
+              {messages.map((msg) => (
                 <MessageBubble
                   key={msg.id}
                   message={msg}
                   isCurrentUser={msg.sender.username === user?.username}
                 />
-              ))
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+
+        {/* Message Input */}
+        <div className="p-3 bg-white border-top">
           <MessageInput onSendMessage={handleSendMessage} />
-        </Card.Body>
-      </Card>
+        </div>
+        </div>
+      </div>
     </div>
   );
 };

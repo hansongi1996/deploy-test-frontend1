@@ -4,6 +4,8 @@ import { getNotices, getNotice, createNotice, updateNotice, deleteNotice } from 
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import type { Notice } from '../types';
+import Header from '../components/Header';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const NoticePage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -19,6 +21,18 @@ const NoticePage: React.FC = () => {
     content: '',
     isImportant: false
   });
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // 현재 활성 탭 결정
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path === '/notices') return 'notices';
+    if (path === '/assignments') return 'assignments';
+    return 'chat';
+  };
+
+  const activeTab = getActiveTab();
 
   // 권한 확인 함수들
   const isInstructorOrAdmin = () => {
@@ -134,15 +148,76 @@ const NoticePage: React.FC = () => {
   }
 
   return (
-    <div className="text-center">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>공지사항</h2>
-        {isInstructorOrAdmin() && (
-          <Button variant="primary" onClick={handleCreateNotice}>
-            새 공지사항 작성
-          </Button>
-        )}
-      </div>
+    <div className="d-flex flex-column" style={{ height: '100vh' }}>
+      <Header />
+      
+      <div className="d-flex flex-grow-1">
+        {/* Left Panel - Navigation Sidebar */}
+        <div className="bg-light border-end d-flex flex-column" style={{ width: '280px', minWidth: '280px', height: 'calc(100vh - 80px)' }}>
+          {/* Main Navigation Tabs */}
+          <div className="d-flex border-bottom">
+            <Button 
+              variant="link" 
+              className={`flex-fill text-decoration-none ${activeTab === 'notices' ? 'text-primary border-bottom border-primary' : 'text-dark'}`}
+              onClick={() => navigate('/notices')}
+            >
+              공지사항
+            </Button>
+            <Button 
+              variant="link" 
+              className={`flex-fill text-decoration-none ${activeTab === 'assignments' ? 'text-primary border-bottom border-primary' : 'text-dark'}`}
+              onClick={() => navigate('/assignments')}
+            >
+              과제
+            </Button>
+            <Button 
+              variant="link" 
+              className={`flex-fill text-decoration-none ${activeTab === 'chat' ? 'text-primary border-bottom border-primary' : 'text-dark'}`}
+              onClick={() => navigate('/')}
+            >
+              채팅
+            </Button>
+          </div>
+
+          {/* Notice content placeholder */}
+          <div className="flex-grow-1 d-flex align-items-center justify-content-center">
+            <div className="text-center text-muted">
+              <i className="bi bi-megaphone mb-3" style={{ fontSize: '3rem' }}></i>
+              <p>공지사항 목록이 여기에 표시됩니다.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Panel - Notice Content */}
+        <div className="flex-grow-1 d-flex flex-column">
+          {/* Notice Header */}
+          <div className="bg-white border-bottom py-4 px-4">
+            <div className="d-flex justify-content-between align-items-center">
+              <h2 className="mb-0">공지사항</h2>
+              {isInstructorOrAdmin() && (
+                <Button variant="primary" onClick={handleCreateNotice}>
+                  새 공지사항 작성
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-grow-1 p-4">
+            {notices.length === 0 ? (
+              <div className="d-flex align-items-center justify-content-center h-100">
+                <div className="text-center">
+                  <div className="mb-4">
+                    <i className="bi bi-megaphone" style={{ fontSize: '4rem', color: '#6c757d' }}></i>
+                  </div>
+                  <h4 className="text-muted mb-3">공지사항이 없습니다</h4>
+                  <p className="text-muted">
+                    현재 등록된 공지사항이 없습니다. 새로운 공지사항이 등록되면 여기에 표시됩니다.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div>
       
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
@@ -303,6 +378,11 @@ const NoticePage: React.FC = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

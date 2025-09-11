@@ -90,6 +90,15 @@ class SocketService {
   public async publish(destination: string, body: JSONLike): Promise<void> {
     await this.waitUntilReady();
     const payload = typeof body === 'string' ? body : JSON.stringify(body);
+    
+    console.log('🚀 Publishing message:');
+    console.log('  Destination:', destination);
+    console.log('  Payload:', payload);
+    console.log('  Headers:', { 
+      'content-type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+    });
+    
     this.client.publish({ 
       destination, 
       body: payload, 
@@ -98,6 +107,8 @@ class SocketService {
         'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
       } 
     });
+    
+    console.log('✅ Message published to STOMP broker');
   }
 }
 

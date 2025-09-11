@@ -11,7 +11,7 @@ import RegisterSuccess from './components/auth/RegisterSuccess';
 import AdminHome from './components/admin/AdminHome';
 import SignupApprove from './components/admin/SignupApprove';
 import MemberManage from './components/admin/MemberManage';
-import { Container, Navbar, Nav, Button } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from './store';
 import { logout, initializeAuth } from './store/slices/authSlice';
@@ -34,44 +34,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
-// Navigation Component
-const Navigation: React.FC = () => {
-  const dispatch = useDispatch();
-  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
-
-  const handleLogout = () => {
-    dispatch(logout());
-  };
-
-  if (!isAuthenticated) return null;
-
-  return (
-    <Navbar bg="dark" variant="dark" expand="lg" style={{ width: '100%' }}>
-      <Container>
-        <Navbar.Brand href="/">PeerFlow</Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto">
-            <Nav.Link href="/">홈</Nav.Link>
-            <Nav.Link href="/assignments">과제</Nav.Link>
-            <Nav.Link href="/notices">공지사항</Nav.Link>
-            {(user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR') && (
-              <Nav.Link href="/admin">관리자</Nav.Link>
-            )}
-          </Nav>
-          <Nav>
-            <Navbar.Text className="me-3">
-              안녕하세요, {user?.fullName || user?.username}님 ({user?.role})
-            </Navbar.Text>
-            <Button variant="outline-light" size="sm" onClick={handleLogout}>
-              로그아웃
-            </Button>
-          </Nav>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
-  ); 
-};
 
 // 메인 App 컴포넌트
 function App() {
@@ -135,13 +97,12 @@ function App() {
         alignItems: 'center',
         minHeight: '100vh'
       }}>
-        <Navigation />
-        
-        <Container className="mt-4" style={{ 
+        <Container style={{ 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center',
-          maxWidth: '1200px'
+          maxWidth: '100%',
+          padding: 0
         }}>
           <Routes>
             {/* 인증 관련 라우트 */}

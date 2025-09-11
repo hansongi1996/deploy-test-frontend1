@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import SignupApprove from './SignupApprove';
 import MemberManage from './MemberManage';
+import Header from '../Header';
 
 
 // 렌더링할 수 있는 컴포넌트 타입을 정의합니다.
@@ -32,23 +33,26 @@ const AdminHome = () => {
     };
 
     return (
-        <div className="min-h-screen flex justify-center p-4">
-            <div className="bg-white p-8 rounded-lg shadow-lg w-full">
-                <h2 className="text-xl font-bold mb-4 text-gray-800">관리자페이지</h2>
-                <div className="flex space-x-2">
-                    <button
-                        className="flex-1 bg-gray-100 hover:bg-gray-200 font-bold py-2 px-4 rounded-md transition-colors duration-200"
-                        onClick={handleApprove}>가입승인</button>
-                    <button
-                        className="flex-1 bg-gray-100 hover:bg-gray-200 font-bold py-2 px-4 rounded-md transition-colors duration-200"
-                        onClick={handleMember}>회원관리</button>
-                </div>
-                {/* 상태에 따라 다른 컴포넌트를 렌더링합니다. */}
-                <div className="mt-8 w-full">
-                    {renderContent()}
+        <div className="d-flex flex-column" style={{ height: '100vh' }}>
+            <Header />
+            
+            <div className="flex-grow-1 p-4">
+                <div className="bg-white p-4 rounded shadow-sm">
+                    <h2 className="h4 mb-4">관리자페이지</h2>
+                    <div className="d-flex gap-2 mb-4">
+                        <button
+                            className="btn btn-outline-secondary flex-fill"
+                            onClick={handleApprove}>가입승인</button>
+                        <button
+                            className="btn btn-outline-secondary flex-fill"
+                            onClick={handleMember}>회원관리</button>
+                    </div>
+                    {/* 상태에 따라 다른 컴포넌트를 렌더링합니다. */}
+                    <div className="w-100">
+                        {renderContent()}
+                    </div>
                 </div>
             </div>
-
         </div>
     );
 };

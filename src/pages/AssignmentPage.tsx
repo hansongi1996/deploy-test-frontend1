@@ -4,6 +4,8 @@ import { getAssignments, submitAssignment, uploadFile } from '../api';
 import type { Assignment } from '../types';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
+import Header from '../components/Header';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const AssignmentPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -17,6 +19,18 @@ const AssignmentPage: React.FC = () => {
   const [linkUrl, setLinkUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // 현재 활성 네비게이션 탭 결정
+  const getActiveNavTab = () => {
+    const path = location.pathname;
+    if (path === '/notices') return 'notices';
+    if (path === '/assignments') return 'assignments';
+    return 'chat';
+  };
+
+  const activeNavTab = getActiveNavTab();
 
   useEffect(() => {
     loadAssignments();
@@ -126,37 +140,79 @@ const AssignmentPage: React.FC = () => {
   }
 
   return (
-    <div className="assignment-page">
-      {/* Header */}
-      <div className="assignment-header bg-white border-bottom py-3">
-        <Container>
-          <Row className="align-items-center">
-            <Col>
-              <h1 className="h3 mb-1">{selectedAssignment?.title || '과제'}</h1>
+    <div className="d-flex flex-column" style={{ height: '100vh' }}>
+      <Header />
+      
+      <div className="d-flex flex-grow-1">
+        {/* Left Panel - Navigation Sidebar */}
+        <div className="bg-light border-end d-flex flex-column" style={{ width: '280px', minWidth: '280px', height: 'calc(100vh - 80px)' }}>
+          {/* Main Navigation Tabs */}
+          <div className="d-flex border-bottom">
+            <Button 
+              variant="link" 
+              className={`flex-fill text-decoration-none ${activeNavTab === 'notices' ? 'text-primary border-bottom border-primary' : 'text-dark'}`}
+              onClick={() => navigate('/notices')}
+            >
+              공지사항
+            </Button>
+            <Button 
+              variant="link" 
+              className={`flex-fill text-decoration-none ${activeNavTab === 'assignments' ? 'text-primary border-bottom border-primary' : 'text-dark'}`}
+              onClick={() => navigate('/assignments')}
+            >
+              과제
+            </Button>
+            <Button 
+              variant="link" 
+              className={`flex-fill text-decoration-none ${activeNavTab === 'chat' ? 'text-primary border-bottom border-primary' : 'text-dark'}`}
+              onClick={() => navigate('/')}
+            >
+              채팅
+            </Button>
+          </div>
+
+          {/* Assignment content placeholder */}
+          <div className="flex-grow-1 d-flex align-items-center justify-content-center">
+            <div className="text-center text-muted">
+              <i className="bi bi-clipboard-check mb-3" style={{ fontSize: '3rem' }}></i>
+              <p>과제 목록이 여기에 표시됩니다.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Panel - Assignment Content */}
+        <div className="flex-grow-1 d-flex flex-column">
+          {/* Assignment Header */}
+          <div className="assignment-header bg-white border-bottom py-4 px-4">
+            <div>
+              <h1 className="h3 mb-2">{selectedAssignment?.title || '과제'}</h1>
               <nav aria-label="breadcrumb">
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item">과제</li>
                 </ol>
               </nav>
-            </Col>
-            <Col xs="auto">
-              <div className="d-flex gap-2">
-                <Button variant="outline-secondary" size="sm">
-                  <i className="bi bi-link-45deg"></i> 링크
-                </Button>
-                <Button variant="outline-secondary" size="sm">
-                  <i className="bi bi-copy"></i> 복사
-                </Button>
-              </div>
-            </Col>
-          </Row>
-        </Container>
-      </div>
+            </div>
+          </div>
 
-      <Container className="py-4">
-        <Row>
-          {/* Sidebar */}
-          <Col lg={4} className="mb-4">
+          {/* Main Content Area */}
+          <div className="flex-grow-1 p-4">
+            {assignments.length === 0 ? (
+              <div className="d-flex align-items-center justify-content-center h-100">
+                <div className="text-center">
+                  <div className="mb-4">
+                    <i className="bi bi-clipboard-check" style={{ fontSize: '4rem', color: '#6c757d' }}></i>
+                  </div>
+                  <h4 className="text-muted mb-3">과제가 없습니다</h4>
+                  <p className="text-muted">
+                    현재 등록된 과제가 없습니다. 새로운 과제가 등록되면 여기에 표시됩니다.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <Container className="py-4">
+                <Row>
+                  {/* Sidebar */}
+                  <Col lg={4} className="mb-4">
             <div className="assignment-sidebar">
               {/* My Assignments */}
               <Card className="mb-4">
@@ -396,6 +452,10 @@ const AssignmentPage: React.FC = () => {
           </Col>
         </Row>
       </Container>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
