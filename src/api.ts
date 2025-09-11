@@ -35,7 +35,7 @@ api.interceptors.response.use(
 );
 
 export const getChatRooms = async (): Promise<ChatRoom[]> => {
-  const response = await api.get('/all');
+  const response = await api.get('/chatrooms/all');
   return response.data;
 };
 
