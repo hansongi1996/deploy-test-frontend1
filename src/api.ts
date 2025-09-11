@@ -173,5 +173,27 @@ export const getCurrentUser = async (): Promise<any> => {
   return response.data;
 };
 
+//
+// ----- User(프로필) 관련 API -----
+//
+export const uploadAvatar = async (
+  userId: number,
+  file: File
+): Promise<{ avatarUrl: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await api.post(`/users/${userId}/avatar`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+export const deleteAvatar = async (userId: number): Promise<void> => {
+  await api.delete(`/users/${userId}/avatar`);
+};
+
+// ✅ AvatarUploader.tsx 가 기대하는 export 이름을 alias 로 제공
+export { uploadAvatar as uploadUserAvatar, deleteAvatar as removeUserAvatar };
 
 export default api;

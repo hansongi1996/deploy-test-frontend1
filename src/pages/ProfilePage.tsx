@@ -3,9 +3,11 @@ import { Container, Card, Button } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import Header from '../components/Header';
+import AvatarUploader from '../components/profile/AvatarUploader';
 
 const ProfilePage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const userId = user?.id ?? 0; // 로그인 연동 전이라면 임시값 0, 실제론 반드시 유저 id 사용
 
   return (
     <div className="d-flex flex-column" style={{ height: '100vh' }}>
@@ -20,24 +22,24 @@ const ProfilePage: React.FC = () => {
               </Card.Header>
               <Card.Body>
                 <div className="text-center mb-4">
-                  {/* 프로필 사진 */}
-                  <div 
-                    className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3"
-                    style={{ width: '80px', height: '80px', fontSize: '32px' }}
-                  >
-                    {user?.fullName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                  </div>
+                  {/* 아바타 업로더 */}
+                  <AvatarUploader
+                    userId={userId}
+                    initialUrl={(user as any)?.avatarUrl ?? null} // 서버에서 avatarUrl 가져오면 여기 넣기
+                    onChanged={(url) => {
+                      console.log('avatar changed:', url);
+                      // TODO: 필요하면 여기서 사용자 정보 재조회(dispatch) 등으로 화면 반영
+                    }}
+                    className="d-flex flex-column align-items-center"
+                  />
                   
                   {/* 사용자 정보 */}
-                  <h5>{user?.fullName || user?.username}</h5>
+                  <h5 className="mt-3">{user?.fullName || user?.username}</h5>
                   <p className="text-muted mb-0">{user?.email}</p>
                   <small className="text-muted">{user?.role}</small>
                 </div>
 
                 <div className="d-grid gap-2">
-                  <Button variant="outline-primary" size="lg">
-                    프로필 사진 변경
-                  </Button>
                   <Button variant="outline-secondary" size="lg">
                     이름 변경
                   </Button>
