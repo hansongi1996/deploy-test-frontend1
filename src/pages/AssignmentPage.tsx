@@ -171,12 +171,56 @@ const AssignmentPage: React.FC = () => {
             </Button>
           </div>
 
-          {/* Assignment content placeholder */}
-          <div className="flex-grow-1 d-flex align-items-center justify-content-center">
-            <div className="text-center text-muted">
-              <i className="bi bi-clipboard-check mb-3" style={{ fontSize: '3rem' }}></i>
-              <p>과제 목록이 여기에 표시됩니다.</p>
-            </div>
+          {/* Assignment List */}
+          <div className="flex-grow-1 p-3">
+            {/* My Assignments */}
+            <Card className="mb-3">
+              <Card.Header className="bg-light py-2">
+                <h6 className="mb-0">나의 과제</h6>
+              </Card.Header>
+              <Card.Body className="py-2">
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="small">미제출</span>
+                  <Badge bg="warning" className="small">{notSubmitted}</Badge>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <span className="small">지각</span>
+                  <Badge bg="danger" className="small">{late}</Badge>
+                </div>
+              </Card.Body>
+            </Card>
+
+            {/* All Assignments */}
+            <Card>
+              <Card.Header className="bg-light py-2">
+                <h6 className="mb-0">전체 과제</h6>
+              </Card.Header>
+              <Card.Body className="p-0">
+                <ListGroup variant="flush">
+                  {assignments.map((assignment) => (
+                    <ListGroup.Item
+                      key={assignment.id}
+                      className={`assignment-item ${selectedAssignment?.id === assignment.id ? 'active' : ''}`}
+                      onClick={() => setSelectedAssignment(assignment)}
+                      style={{ cursor: 'pointer', padding: '12px' }}
+                    >
+                      <div className="d-flex justify-content-between align-items-start mb-1">
+                        <h6 className="mb-0 small">{assignment.title}</h6>
+                        {assignment.status === 'SUBMITTED' && (
+                          <i className="bi bi-check-circle-fill text-success small"></i>
+                        )}
+                      </div>
+                      <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                        마감일 {formatDate(assignment.dueDate)}
+                      </div>
+                      <div className="mt-1">
+                        {getStatusBadge(assignment.status)}
+                      </div>
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              </Card.Body>
+            </Card>
           </div>
         </div>
 
@@ -208,69 +252,10 @@ const AssignmentPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-            ) : (
-              <Container className="py-4">
-                <Row>
-                  {/* Sidebar */}
-                  <Col lg={4} className="mb-4">
-            <div className="assignment-sidebar">
-              {/* My Assignments */}
-              <Card className="mb-4">
-                <Card.Header className="bg-light">
-                  <h6 className="mb-0">나의 과제</h6>
-                </Card.Header>
-                <Card.Body>
-                  <div className="d-flex justify-content-between mb-2">
-                    <span>미제출</span>
-                    <Badge bg="warning">{notSubmitted}</Badge>
-                  </div>
-                  <div className="d-flex justify-content-between">
-                    <span>지각</span>
-                    <Badge bg="danger">{late}</Badge>
-                  </div>
-                </Card.Body>
-              </Card>
-
-              {/* All Assignments */}
-              <Card>
-                <Card.Header className="bg-light">
-                  <h6 className="mb-0">전체 과제</h6>
-                </Card.Header>
-                <Card.Body className="p-0">
-                  <ListGroup variant="flush">
-                    {assignments.map((assignment) => (
-                      <ListGroup.Item
-                        key={assignment.id}
-                        className={`assignment-item ${selectedAssignment?.id === assignment.id ? 'active' : ''}`}
-                        onClick={() => setSelectedAssignment(assignment)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <div className="d-flex justify-content-between align-items-start mb-1">
-                          <h6 className="mb-0">{assignment.title}</h6>
-                          {assignment.status === 'SUBMITTED' && (
-                            <i className="bi bi-check-circle-fill text-success"></i>
-                          )}
-                        </div>
-                        <div className="text-muted small mb-1">
-                          마감일 {formatDate(assignment.dueDate)}
-                        </div>
-                        <div>
-                          {getStatusBadge(assignment.status)}
-                        </div>
-                      </ListGroup.Item>
-                    ))}
-                  </ListGroup>
-                </Card.Body>
-              </Card>
-            </div>
-          </Col>
-
-          {/* Main Content */}
-          <Col lg={8}>
-            {selectedAssignment && (
-              <div className="assignment-detail">
-                {/* Assignment Info */}
-                <Card className="mb-4">
+            ) : selectedAssignment ? (
+                <div>
+                  {/* Assignment Info */}
+                  <Card className="mb-4">
                   <Card.Body>
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <div>
@@ -447,11 +432,19 @@ const AssignmentPage: React.FC = () => {
                     </Tabs>
                   </Card.Body>
                 </Card>
+                </div>
+            ) : (
+              <div className="d-flex align-items-center justify-content-center h-100">
+                <div className="text-center">
+                  <div className="mb-4">
+                    <i className="bi bi-clipboard-check" style={{ fontSize: '4rem', color: '#6c757d' }}></i>
+                  </div>
+                  <h4 className="text-muted mb-3">과제를 선택해주세요</h4>
+                  <p className="text-muted">
+                    왼쪽에서 과제를 선택하면 상세 내용을 확인할 수 있습니다.
+                  </p>
+                </div>
               </div>
-            )}
-          </Col>
-        </Row>
-      </Container>
             )}
           </div>
         </div>
