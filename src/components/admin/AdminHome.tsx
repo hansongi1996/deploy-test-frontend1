@@ -33,18 +33,18 @@ const AdminHome = () => {
     };
 
     return (
-        <div className="d-flex flex-column" style={{ height: '100vh' }}>
+        <div className="d-flex flex-column w-100" style={{ height: '100vh' }}>
             <Header />
             
-            <div className="flex-grow-1 p-4">
+            <div className="flex-grow-1 p-4 w-100">
                 <div className="bg-white p-4 rounded shadow-sm">
                     <h2 className="h4 mb-4">관리자페이지</h2>
                     <div className="d-flex gap-2 mb-4">
                         <button
-                            className="btn btn-outline-secondary flex-fill"
+                            className="btn btn-outline-secondary"
                             onClick={handleApprove}>가입승인</button>
                         <button
-                            className="btn btn-outline-secondary flex-fill"
+                            className="btn btn-outline-secondary"
                             onClick={handleMember}>회원관리</button>
                     </div>
                     {/* 상태에 따라 다른 컴포넌트를 렌더링합니다. */}

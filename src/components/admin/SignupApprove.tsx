@@ -69,6 +69,7 @@ const SignupApprove: React.FC = () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -94,6 +95,7 @@ const SignupApprove: React.FC = () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
 

@@ -108,6 +108,7 @@ const MemberManage: React.FC = () => {
   };
 
   const handleSave = async (userid: number) => {
+    console.log(editFormData)
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/users/${userid}`, {
         method: 'PUT',
@@ -178,20 +179,11 @@ const MemberManage: React.FC = () => {
                     <tr>
                       <td colSpan={8}>
                         <div className="d-flex flex-column gap-2 p-4 bg-light border border-light rounded">
-                          <div className="d-flex gap-2">
-                            <input type="text" name="username" value={editFormData.username || ''} onChange={handleEditChange} placeholder="이름" className="form-control flex-grow-1" />
-                            <input type="text" name="nickname" value={editFormData.nickname || ''} onChange={handleEditChange} placeholder="닉네임" className="form-control flex-grow-1" />
-                            <select name="role" value={editFormData.role || ''} onChange={handleEditChange} className="form-select flex-grow-1">
-                              <option value="ADMIN">ADMIN</option>
-                              <option value="STUDENT">STUDENT</option>
-                              <option value="TEACHER">TEACHER</option>
-                            </select>
-                            <select name="status" value={editFormData.status || ''} onChange={handleEditChange} className="form-select flex-grow-1">
-                              <option value="PENDING">PENDING</option>
-                              <option value="ACTIVE">ACTIVE</option>
-                              <option value="INACTIVE">INACTIVE</option>
-                            </select>
-                            <input type="email" name="email" value={editFormData.email || ''} onChange={handleEditChange} placeholder="이메일" className="form-control flex-grow-1" />
+                          <div className="d-flex gap-2 align-items-center">
+                            <label htmlFor="username" className="form-label mb-0">이름 : </label>
+                            <input type="text" name="username" value={editFormData.username || ''} onChange={handleEditChange} placeholder="이름" className="form-control w-25 " />
+                            <label htmlFor="nickname" className="form-label mb-0">닉네임 : </label>
+                            <input type="text" name="nickname" value={editFormData.nickname || ''} onChange={handleEditChange} placeholder="닉네임" className="form-control w-25 " />
                           </div>
                           <div className="text-end">
                             <button
