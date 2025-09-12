@@ -1,5 +1,24 @@
 import axios from 'axios';
-import type { ChatRoom, ChatRoomType, ChatRoomParticipant, ChatMessage, Assignment, AssignmentSubmission, Notice, LoginRequest, LoginResponse } from './types';
+import type {
+  ChatRoom,
+  ChatRoomType,
+  ChatRoomParticipant,
+  ChatMessage,
+  Assignment,
+  AssignmentSubmission,
+  Notice,
+  LoginRequest,
+  LoginResponse
+} from './types';
+
+// === 세션/로컬 저장소 모두에서 토큰을 읽어오기 (세션 우선) ===
+function getToken(): string | null {
+  return (
+    sessionStorage.getItem('authToken') ||
+    localStorage.getItem('authToken') ||
+    null
+  );
+}
 
 const api = axios.create({
   baseURL: '/api', // Vite 프록시 사용
@@ -8,15 +27,14 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = getToken();
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers = config.headers ?? {};
+      (config.headers as any).Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor to handle auth errors
@@ -24,10 +42,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      // Token expired or invalid -> 두 저장소 모두 정리
+      sessionStorage.removeItem('authUser');
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('tokenExpiry');
+
       localStorage.removeItem('authUser');
       localStorage.removeItem('authToken');
       localStorage.removeItem('tokenExpiry');
+
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -107,7 +130,7 @@ export const submitAssignment = async (
 export const uploadFile = async (file: File): Promise<{ fileUrl: string }> => {
   const formData = new FormData();
   formData.append('file', file);
-  
+
   const response = await api.post('/files/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
