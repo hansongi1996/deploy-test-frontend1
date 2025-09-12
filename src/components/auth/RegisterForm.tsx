@@ -120,6 +120,7 @@ const RegisterForm = () => {
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                             />
                         </div>
+                        
                         <div>
                             <label htmlFor="role" className="block text-gray-700 text-sm font-semibold mb-2 text-left">권한</label>
                             <select

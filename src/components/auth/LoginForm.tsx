@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { setUserData } from "../../store/slices/authSlice";
 
 const LoginForm = () => {
+    const API_BASE_URL = ''; // Vite 프록시 사용
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -29,8 +30,6 @@ const LoginForm = () => {
             password: formData.password.trim(),
         };
 
-        const API_BASE_URL = ''; // Vite 프록시 사용
-
         try {
             const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
                 method: 'POST',
@@ -43,8 +42,8 @@ const LoginForm = () => {
             if (response.ok) {
                 console.log("로그인 성공");
 
-                const data: { accessToken: string } = await response.json(); // 응답을 JSON으로 파싱
-                const token = data.accessToken; // accessToken 속성에서 토큰 추출
+                const data: { accessToken: string } = await response.json(); 
+                const token = data.accessToken;
                 localStorage.setItem('authToken', token);
 
                 const userInfoResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
@@ -65,7 +64,7 @@ const LoginForm = () => {
                 dispatch(setUserData({
                     id: userInfoData.id,
                     username: userInfoData.username,
-                    fullName: userInfoData.fullName || userInfoData.username,
+                    nickName: userInfoData.nickName || userInfoData.username,
                     email: userInfoData.email,
                     role: userInfoData.role,
                     token: token
@@ -184,7 +183,7 @@ const LoginForm = () => {
                         </Link>
                     </div>
                 </div>
-
+                {/* 나중에 지울 부분 */}
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                     <p className="text-xs text-gray-500 text-center mb-1">테스트 계정</p>
                     <p className="text-xs text-gray-600 text-center">이메일: test@example.com</p>
