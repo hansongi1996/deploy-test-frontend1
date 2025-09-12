@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 // 사용자 정보의 타입을 수정했습니다.
 interface User {
@@ -39,7 +40,7 @@ const MemberManage: React.FC = () => {
         }
         return response.json();
       })
-       .then(data => {
+      .then(data => {
         if (data && Array.isArray(data.content)) {
           const mappedUsers = data.content.map((user: User) => ({
             id: user.id,
@@ -134,79 +135,81 @@ const MemberManage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center p-4">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full">
-        <h2 className="text-xl font-bold mb-1 text-gray-800">사용자 관리</h2>
-        <table className="w-full table-auto text-center border-separate border-spacing-y-4">
-          <thead>
-            <tr className="text-gray-500">
-              <th className="font-normal pb-4 pr-2">NO.</th>
-              <th className="font-normal pb-4 pr-2">이름</th>
-              <th className="font-normal pb-4 pr-2">닉네임</th>
-              <th className="font-normal pb-4 pr-2">권한</th>
-              <th className="font-normal pb-4 pr-2">상태</th>
-              <th className="font-normal pb-4 pr-2">이메일</th>
-              <th className="font-normal pb-4 pr-2">정보수정</th>
-              <th className="font-normal pb-4 pr-2">탈퇴</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user, index) => (
-              <React.Fragment key={user.id}>
-                <tr className="bg-gray-100 rounded-lg">
-                  <td>{index + 1}</td>
-                  <td>{user.username}</td>
-                  <td>{user.nickname}</td>
-                  <td>{user.role}</td>
-                  <td>{user.status}</td>
-                  <td>{user.email}</td>
-                  <td>
-                    <button
-                      className="text-blue-500 hover:underline"
-                      onClick={() => handleEditClick(user)}
-                    >
-                      {editingUserId === user.id ? "취소" : "정보수정"}
-                    </button>
-                  </td>
-                  <td>
-                    <button className="text-red-500 hover:underline" onClick={() => handleDelete(user.id)}>탈퇴</button>
-                  </td>
-                </tr>
-                {editingUserId === user.id && (
-                  <tr>
-                    <td colSpan={8}>
-                      <div className="flex flex-col space-y-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div className="flex space-x-2">
-                          <input type="text" name="username" value={editFormData.username || ''} onChange={handleEditChange} placeholder="이름" className="flex-1 border rounded px-2 py-1" />
-                          <input type="text" name="nickname" value={editFormData.nickname || ''} onChange={handleEditChange} placeholder="닉네임" className="flex-1 border rounded px-2 py-1" />
-                          <select name="role" value={editFormData.role || ''} onChange={handleEditChange} className="flex-1 border rounded px-2 py-1">
-                            <option value="ADMIN">ADMIN</option>
-                            <option value="STUDENT">STUDENT</option>
-                            <option value="TEACHER">TEACHER</option>
-                          </select>
-                          <select name="status" value={editFormData.status || ''} onChange={handleEditChange} className="flex-1 border rounded px-2 py-1">
-                            <option value="PENDING">PENDING</option>
-                            <option value="ACTIVE">ACTIVE</option>
-                            <option value="INACTIVE">INACTIVE</option>
-                          </select>
-                          <input type="email" name="email" value={editFormData.email || ''} onChange={handleEditChange} placeholder="이메일" className="flex-1 border rounded px-2 py-1" />
-                        </div>
-                        <div className="text-right">
-                          <button
-                            onClick={() => handleSave(user.id)}
-                            className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                          >
-                            저장
-                          </button>
-                        </div>
-                      </div>
+    <div className="d-flex align-items-center justify-content-center p-4">
+      <div className="bg-white p-4 rounded shadow-lg w-100">
+        <h2 className="text-xl fw-bold mb-1 text-dark">사용자 관리</h2>
+        <div className="table-responsive">
+          <table className="table table-borderless table-spacing text-center w-100">
+            <thead>
+              <tr className="text-muted">
+                <th className="font-normal pb-4 pe-2">NO.</th>
+                <th className="font-normal pb-4 pe-2">이름</th>
+                <th className="font-normal pb-4 pe-2">닉네임</th>
+                <th className="font-normal pb-4 pe-2">권한</th>
+                <th className="font-normal pb-4 pe-2">상태</th>
+                <th className="font-normal pb-4 pe-2">이메일</th>
+                <th className="font-normal pb-4 pe-2">정보수정</th>
+                <th className="font-normal pb-4 pe-2">탈퇴</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user, index) => (
+                <React.Fragment key={user.id}>
+                  <tr className="bg-light rounded">
+                    <td>{index + 1}</td>
+                    <td>{user.username}</td>
+                    <td>{user.nickname}</td>
+                    <td>{user.role}</td>
+                    <td>{user.status}</td>
+                    <td>{user.email}</td>
+                    <td>
+                      <button
+                        className="btn btn-link p-0"
+                        onClick={() => handleEditClick(user)}
+                      >
+                        {editingUserId === user.id ? "취소" : "정보수정"}
+                      </button>
+                    </td>
+                    <td>
+                      <button className="btn btn-link text-danger p-0" onClick={() => handleDelete(user.id)}>탈퇴</button>
                     </td>
                   </tr>
-                )}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
+                  {editingUserId === user.id && (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className="d-flex flex-column gap-2 p-4 bg-light border border-light rounded">
+                          <div className="d-flex gap-2">
+                            <input type="text" name="username" value={editFormData.username || ''} onChange={handleEditChange} placeholder="이름" className="form-control flex-grow-1" />
+                            <input type="text" name="nickname" value={editFormData.nickname || ''} onChange={handleEditChange} placeholder="닉네임" className="form-control flex-grow-1" />
+                            <select name="role" value={editFormData.role || ''} onChange={handleEditChange} className="form-select flex-grow-1">
+                              <option value="ADMIN">ADMIN</option>
+                              <option value="STUDENT">STUDENT</option>
+                              <option value="TEACHER">TEACHER</option>
+                            </select>
+                            <select name="status" value={editFormData.status || ''} onChange={handleEditChange} className="form-select flex-grow-1">
+                              <option value="PENDING">PENDING</option>
+                              <option value="ACTIVE">ACTIVE</option>
+                              <option value="INACTIVE">INACTIVE</option>
+                            </select>
+                            <input type="email" name="email" value={editFormData.email || ''} onChange={handleEditChange} placeholder="이메일" className="form-control flex-grow-1" />
+                          </div>
+                          <div className="text-end">
+                            <button
+                              onClick={() => handleSave(user.id)}
+                              className="btn btn-success"
+                            >
+                              저장
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

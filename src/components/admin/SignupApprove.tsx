@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 // 사용자 정보의 타입을 정의합니다.
 interface User {
@@ -119,66 +120,68 @@ const SignupApprove: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center p-4">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full">
-        <h2 className="text-xl font-bold mb-1 text-gray-800">회원가입 승인</h2>
-        <table className="w-full table-auto text-left border-separate border-spacing-y-4">
-          <thead>
-            <tr className="text-gray-500">
-              <th className="font-normal pb-4 pr-2">이름</th>
-              <th className="font-normal pb-4 pr-2">닉네임</th>
-              <th className="font-normal pb-4 pr-2">권한</th>
-              <th className="font-normal pb-4 pr-2">이메일</th>
-              <th className="font-normal pb-4 pr-2">승인여부</th>
-              <th className="font-normal pb-4 pr-2">액션</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* users 배열을 순회하며 각 사용자에 대한 테이블 행을 동적으로 생성합니다. */}
-            {users.length > 0 ? (
-              users.map(user => (
-                <tr key={user.email} className="bg-gray-100 rounded-lg">
-                  <td className="p-4 pr-2">
-                    <p className="font-bold">{user.username}</p>
-                  </td>
-                  <td className="p-4 px-2">
-                    <span className="text-gray-500">{user.nickname}</span>
-                  </td>
-                  <td className="p-4 px-2">
-                    <span className="text-gray-500">{user.role}</span>
-                  </td>
-                  <td className="p-4 px-2">
-                    <span className="text-gray-500">{user.email}</span>
-                  </td>
-                  <td className="p-4 px-2">
-                    {/* 사용자 상태에 따라 텍스트를 표시합니다. */}
-                    <span className="text-gray-500">대기중</span>
-                  </td>
-                  <td className="p-4 px-2 space-x-2">
-                    <button
-                      onClick={() => handleApprove(user.email)}
-                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                    >
-                      승인
-                    </button>
-                    <button
-                      onClick={() => handleDeny(user.email)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                    >
-                      거부
-                    </button>
+    <div className="d-flex align-items-center justify-content-center p-4">
+      <div className="bg-white p-4 rounded shadow-lg w-100">
+        <h2 className="text-xl fw-bold mb-1 text-dark">회원가입 승인</h2>
+        <div className="table-responsive">
+          <table className="table table-borderless table-spacing w-100">
+            <thead>
+              <tr className="text-muted">
+                <th className="font-normal pb-4 pe-2">이름</th>
+                <th className="font-normal pb-4 pe-2">닉네임</th>
+                <th className="font-normal pb-4 pe-2">권한</th>
+                <th className="font-normal pb-4 pe-2">이메일</th>
+                <th className="font-normal pb-4 pe-2">승인여부</th>
+                <th className="font-normal pb-4 pe-2">액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.length > 0 ? (
+                users.map(user => (
+                  <tr key={user.email} className="bg-light rounded">
+                    <td className="p-4 pe-2">
+                      <p className="fw-bold">{user.username}</p>
+                    </td>
+                    <td className="p-4 px-2">
+                      <span className="text-muted">{user.nickname}</span>
+                    </td>
+                    <td className="p-4 px-2">
+                      <span className="text-muted">{user.role}</span>
+                    </td>
+                    <td className="p-4 px-2">
+                      <span className="text-muted">{user.email}</span>
+                    </td>
+                    <td className="p-4 px-2">
+                      <span className="text-muted">대기중</span>
+                    </td>
+                    <td className="p-4 px-2">
+                      <div className="d-flex gap-2">
+                        <button
+                          onClick={() => handleApprove(user.email)}
+                          className="btn btn-success"
+                        >
+                          승인
+                        </button>
+                        <button
+                          onClick={() => handleDeny(user.email)}
+                          className="btn btn-danger"
+                        >
+                          거부
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="text-center py-4">
+                    <span className="text-muted">대기 중인 회원이 없습니다.</span>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="text-center py-4">
-                  <span className="text-gray-500">대기 중인 회원이 없습니다.</span>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
