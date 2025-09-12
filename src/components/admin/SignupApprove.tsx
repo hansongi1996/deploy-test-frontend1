@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 
 // 사용자 정보의 타입을 정의합니다.
 interface User {
@@ -8,7 +10,7 @@ interface User {
   role: string;
   email: string;
   // 초기 승인 상태를 관리하기 위해 status를 추가합니다.
-  status?: 'pending' | 'approved' | 'denied'; 
+  status?: 'pending' | 'approved' | 'denied';
 }
 
 const SignupApprove: React.FC = () => {
@@ -16,14 +18,17 @@ const SignupApprove: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const token = user?.token;
 
   // 컴포넌트 마운트 시 프록시를 통해 데이터 가져오기
   useEffect(() => {
     setLoading(true);
-    fetch('/api/admin/users/pending', {
+    fetch(`/api/admin/users/status/pending`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       }
     })
       .then(response => {
@@ -32,13 +37,18 @@ const SignupApprove: React.FC = () => {
         }
         return response.json();
       })
-      .then((data: User[]) => {
-        // 받아온 데이터에 기본 status를 추가하여 상태를 관리합니다.
-        const usersWithStatus = data.map(user => ({
-          ...user,
-          status: 'pending' as 'pending' | 'approved' | 'denied'
-        }));
-        setUsers(usersWithStatus);
+      .then((data) => {
+        if (data && Array.isArray(data.content)) {
+          const usersWithStatus = data.content.map((user: User) => ({
+            ...user,
+            status: 'pending' as 'pending' | 'approved' | 'denied'
+          }));
+          setUsers(usersWithStatus);
+        } else {
+          // 응답 형식이 예상과 다를 경우 처리합니다.
+          console.error('서버 응답이 유효한 페이지 형식이 아닙니다:', data);
+          setUsers([]); // 빈 배열로 상태를 초기화
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -46,24 +56,24 @@ const SignupApprove: React.FC = () => {
         setError('사용자 데이터를 불러올 수 없습니다.');
         setLoading(false);
       });
-  }, []);
+  }, [token]);
 
   // 승인/거부 버튼 클릭 핸들러 (프록시를 통한 호출)
   const handleApprove = async (userEmail: string) => {
     try {
       const user = users.find(u => u.email === userEmail);
       if (!user) return;
-      
+
       const response = await fetch(`/api/admin/users/${user.id}/approve`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         }
       });
-      
+
       if (response.ok) {
         console.log(`${userEmail} 승인 처리 완료`);
-        setUsers(prevUsers => 
+        setUsers(prevUsers =>
           prevUsers.filter(u => u.email !== userEmail)
         );
       } else {
@@ -78,17 +88,17 @@ const SignupApprove: React.FC = () => {
     try {
       const user = users.find(u => u.email === userEmail);
       if (!user) return;
-      
+
       const response = await fetch(`/api/admin/users/${user.id}/deny`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         }
       });
-      
+
       if (response.ok) {
         console.log(`${userEmail} 거부 처리 완료`);
-        setUsers(prevUsers => 
+        setUsers(prevUsers =>
           prevUsers.filter(u => u.email !== userEmail)
         );
       } else {

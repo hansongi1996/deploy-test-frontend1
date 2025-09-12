@@ -4,7 +4,7 @@ import type { RootState } from '../../store';
 
 // 사용자 정보의 타입을 수정했습니다.
 interface User {
-  userid: number; // ⭐ user_id에서 userid로 변경
+  id: number;
   username: string;
   nickname: string;
   role: string;
@@ -13,12 +13,12 @@ interface User {
 }
 
 const MemberManage: React.FC = () => {
+  const API_BASE_URL = ''; // Vite 프록시 사용
   const { user } = useSelector((state: RootState) => state.auth);
   const token = user?.token;
   const [users, setUsers] = useState<User[]>([]);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [editFormData, setEditFormData] = useState<Partial<User>>({});
-  const API_BASE_URL = 'http://localhost:8080';
 
   useEffect(() => {
     if (!token) {
@@ -39,16 +39,21 @@ const MemberManage: React.FC = () => {
         }
         return response.json();
       })
-      .then(data => {
-        const mappedUsers = data.map((user:User) => ({
-          userid: user.userid,
-          username: user.username,
-          nickname: user.nickname,
-          role: user.role,
-          status: user.status,
-          email: user.email
-        }));
-        setUsers(mappedUsers);
+       .then(data => {
+        if (data && Array.isArray(data.content)) {
+          const mappedUsers = data.content.map((user: User) => ({
+            id: user.id,
+            username: user.username,
+            nickname: user.nickname,
+            role: user.role,
+            status: user.status,
+            email: user.email
+          }));
+          setUsers(mappedUsers);
+        } else {
+          console.warn('서버 응답이 예상한 페이지 형식(data.content)이 아닙니다:', data);
+          setUsers([]);
+        }
       })
       .catch(error => {
         console.error('사용자 데이터를 불러오는 데 실패했습니다:', error);
@@ -71,7 +76,7 @@ const MemberManage: React.FC = () => {
           if (!response.ok) {
             throw new Error('네트워크 응답이 올바르지 않습니다.');
           }
-          setUsers(users.filter(user => user.userid !== userid));
+          setUsers(users.filter(user => user.id !== userid));
           alert("회원 탈퇴가 성공적으로 완료되었습니다.");
         })
         .catch(error => {
@@ -84,10 +89,10 @@ const MemberManage: React.FC = () => {
   };
   //정보수정 클릭 handler
   const handleEditClick = (user: User) => {
-    if (editingUserId === user.userid) {
+    if (editingUserId === user.id) {
       setEditingUserId(null);
     } else {
-      setEditingUserId(user.userid);
+      setEditingUserId(user.id);
       setEditFormData(user);
     }
   };
@@ -117,7 +122,7 @@ const MemberManage: React.FC = () => {
       }
 
       setUsers(prevUsers =>
-        prevUsers.map(user => (user.userid === userid ? { ...user, ...editFormData } as User : user))
+        prevUsers.map(user => (user.id === userid ? { ...user, ...editFormData } as User : user))
       );
       setEditingUserId(null);
       alert("정보가 성공적으로 수정되었습니다.");
@@ -147,7 +152,7 @@ const MemberManage: React.FC = () => {
           </thead>
           <tbody>
             {users.map((user, index) => (
-              <React.Fragment key={user.userid}>
+              <React.Fragment key={user.id}>
                 <tr className="bg-gray-100 rounded-lg">
                   <td>{index + 1}</td>
                   <td>{user.username}</td>
@@ -160,14 +165,14 @@ const MemberManage: React.FC = () => {
                       className="text-blue-500 hover:underline"
                       onClick={() => handleEditClick(user)}
                     >
-                      {editingUserId === user.userid ? "취소" : "정보수정"}
+                      {editingUserId === user.id ? "취소" : "정보수정"}
                     </button>
                   </td>
                   <td>
-                    <button className="text-red-500 hover:underline" onClick={() => handleDelete(user.userid)}>탈퇴</button>
+                    <button className="text-red-500 hover:underline" onClick={() => handleDelete(user.id)}>탈퇴</button>
                   </td>
                 </tr>
-                {editingUserId === user.userid && (
+                {editingUserId === user.id && (
                   <tr>
                     <td colSpan={8}>
                       <div className="flex flex-col space-y-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
@@ -188,7 +193,7 @@ const MemberManage: React.FC = () => {
                         </div>
                         <div className="text-right">
                           <button
-                            onClick={() => handleSave(user.userid)}
+                            onClick={() => handleSave(user.id)}
                             className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                           >
                             저장
