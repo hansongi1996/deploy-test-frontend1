@@ -16,6 +16,7 @@ import { logout, initializeAuth } from './store/slices/authSlice';
 import { useEffect, useRef } from 'react';
 import ResetPassword from './components/auth/ResetPassword';
 import TeacherPage from './pages/TeacherPage';
+import AlarmPage from './pages/AlarmPage';
 
 // Protected Route Component (Redux)
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -146,6 +147,7 @@ function App() {
                 <ProfilePage />
               </ProtectedRoute>
             } />
+            <Route path="/alarm" element={<AlarmPage />} />
 
             {/* 강사페이지 */}
             <Route path="/teacher" element={<TeacherPage />} />
