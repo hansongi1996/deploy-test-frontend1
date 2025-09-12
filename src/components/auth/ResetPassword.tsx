@@ -5,7 +5,7 @@ import type { RootState } from '../../store';
 import { resetAuthState, setNewPassword } from '../../store/slices/authSlice';
 
 const ResetPassword = () => {
-    const API_BASE_URL = 'http://localhost:8080';
+    const API_BASE_URL = ''; // Vite 프록시 사용
     const navigate = useNavigate();
     const dispatch = useDispatch();
     
