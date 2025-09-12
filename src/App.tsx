@@ -18,11 +18,17 @@ import type { RootState } from './store';
 import { logout, initializeAuth } from './store/slices/authSlice';
 import { useEffect, useRef } from 'react';
 import ResetPassword from './components/auth/ResetPassword';
+import TeacherPage from './pages/TeacherPage';
+import Dashboard from './components/teacher/Dashboard';
+import AssignmentList from './components/teacher/AssignmentList';
+import AssignmentCreate from './components/teacher/AssignmentCreate';
+import AssignmentReview from './components/teacher/AssignmentReview';
+import GradePage from './components/teacher/GradePage';
 
 // Protected Route Component (Redux)
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
-  
+
   if (isLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
@@ -32,7 +38,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
       </div>
     );
   }
-  
+
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
@@ -50,7 +56,7 @@ function App() {
 
     const initializeAuthState = async () => {
       const authToken = localStorage.getItem('authToken');
-      
+
       if (authToken) {
         try {
           // 토큰이 있으면 사용자 정보를 다시 가져와서 Redux에 저장
@@ -61,7 +67,7 @@ function App() {
               'Authorization': `Bearer ${authToken}`
             }
           });
-          
+
           if (response.ok) {
             const userInfoData = await response.json();
             dispatch(initializeAuth({
@@ -92,16 +98,16 @@ function App() {
 
   return (
     <Router>
-      <div style={{ 
-        width: '100%', 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <div style={{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         minHeight: '100vh'
       }}>
-        <Container style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
+        <Container style={{
+          display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           maxWidth: '100%',
           padding: 0
@@ -112,15 +118,15 @@ function App() {
             <Route path="/register" element={<RegisterForm />} />
             <Route path="/findPassword" element={<FindPassword />} />
             <Route path="/register-success" element={<RegisterSuccess />} />
-            <Route path="/resetPassword" element={<ResetPassword/>}/>
-            
+            <Route path="/resetPassword" element={<ResetPassword />} />
+
             {/* 관리자 메인 페이지 */}
             <Route path="/adminmain" element={
               <ProtectedRoute>
                 <Mainpage />
               </ProtectedRoute>
             } />
-            
+
             {/* 관리자 기능 */}
             <Route path="/admin" element={
               <ProtectedRoute>
@@ -137,7 +143,7 @@ function App() {
                 <MemberManage />
               </ProtectedRoute>
             } />
-            
+
             {/* 일반 사용자 페이지 */}
             <Route path="/" element={
               <ProtectedRoute>
@@ -164,6 +170,15 @@ function App() {
                 <ProfilePage />
               </ProtectedRoute>
             } />
+
+            {/* 강사페이지 */}
+            <Route path="/teacher" element={<TeacherPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/assignments-teacher" element={<AssignmentList />} />
+            <Route path="/assignments/new" element={<AssignmentCreate />} />
+            <Route path="/assignments/:id/edit" element={<AssignmentCreate />} />
+            <Route path="/review" element={<AssignmentReview />} />
+            <Route path="/grade" element={<GradePage />} />
           </Routes>
         </Container>
       </div>

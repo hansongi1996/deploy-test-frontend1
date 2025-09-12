@@ -39,64 +39,55 @@ const LoginForm = () => {
                 body: JSON.stringify(userData)
             });
 
-            if (response.ok) {
-                console.log("로그인 성공");
-
-                const data: { accessToken: string } = await response.json(); 
-                const token = data.accessToken;
-                localStorage.setItem('authToken', token);
-
-                const userInfoResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!userInfoResponse.ok) {
-                    throw new Error('사용자 데이터를 불러오는 데 실패했습니다.');
-                }
-
-                const userInfoData = await userInfoResponse.json();
-
-                // 사용자 정보를 완전히 저장
-                dispatch(setUserData({
-                    id: userInfoData.id,
-                    username: userInfoData.username,
-                    nickName: userInfoData.nickName || userInfoData.username,
-                    email: userInfoData.email,
-                    role: userInfoData.role,
-                    token: token
-                }));
-
-                if (userInfoData.role === "ADMIN" || userInfoData.role === "INSTRUCTOR") {
-                    navigate("/admin");
-                } else if (userInfoData.role === "STUDENT") {
-                    navigate("/");
-                }
-
-            } else {
-                // 응답 헤더의 Content-Type을 확인하여 JSON인지 일반 텍스트인지 판단합니다.
-                const contentType = response.headers.get("content-type");
-                let errorMessage = `로그인에 실패했습니다: ${response.statusText}`;
-
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    // 응답이 JSON 형식일 경우
-                    const errorData = await response.json();
-                    errorMessage = `로그인에 실패했습니다: ${errorData.message || response.statusText}`;
-                } else {
-                    // 응답이 일반 텍스트일 경우
-                    const errorText = await response.text();
-                    errorMessage = `로그인에 실패했습니다: ${errorText}`;
-                }
-
-                console.error("로그인 실패:", errorMessage);
-                alert(errorMessage);
+            if (!response.ok) {
+                // 응답이 성공적이지 않으면 에러를 throw하여 catch 블록으로 이동
+                const errorData = await response.json();
+                throw new Error(errorData.message || response.statusText || '로그인 실패');
             }
+
+            const data: { accessToken: string } = await response.json();
+            const token = data.accessToken;
+            localStorage.setItem('authToken', token);
+
+            const userInfoResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!userInfoResponse.ok) {
+                throw new Error('사용자 데이터를 불러오는 데 실패했습니다.');
+            }
+
+            const userInfoData = await userInfoResponse.json();
+
+            // 사용자 정보를 완전히 저장
+            dispatch(setUserData({
+                id: userInfoData.id,
+                username: userInfoData.username,
+                nickName: userInfoData.nickName || userInfoData.username,
+                email: userInfoData.email,
+                role: userInfoData.role,
+                token: token
+            }));
+
+            // 모든 역할에 대한 로직을 명확하게 분리
+            if (userInfoData.role === "ADMIN") {
+                navigate("/admin");
+            } else if (userInfoData.role === "STUDENT") {
+                navigate("/");
+            } else if (userInfoData.role === "TEACHER") {
+                navigate("/teacher");
+            } else {
+                console.warn("알 수 없는 역할입니다:", userInfoData.role);
+                navigate("/"); // 알 수 없는 역할일 경우 기본 경로로 이동
+            }
+
         } catch (error) {
-            console.error("네트워크 오류:", error);
-            alert("서버 연결에 실패했습니다. 다시 시도해주세요.");
+            console.error("로그인 중 오류 발생:", error);
+            alert(`로그인에 실패했습니다: ${(error as Error).message}`);
         }
     };
     return (
