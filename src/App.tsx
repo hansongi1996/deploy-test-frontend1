@@ -17,6 +17,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from './store';
 import { logout, initializeAuth } from './store/slices/authSlice';
 import { useEffect, useRef } from 'react';
+import ResetPassword from './components/auth/ResetPassword';
 
 // Protected Route Component (Redux)
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -111,6 +112,7 @@ function App() {
             <Route path="/register" element={<RegisterForm />} />
             <Route path="/findPassword" element={<FindPassword />} />
             <Route path="/register-success" element={<RegisterSuccess />} />
+            <Route path="/resetPassword" element={<ResetPassword/>}/>
             
             {/* 관리자 메인 페이지 */}
             <Route path="/adminmain" element={
