@@ -1,7 +1,36 @@
-import { NavLink } from "react-router-dom"; // react-router-dom으로 수정
+import { useState } from "react";
 import Header from "../components/Header";
+import Dashboard from "../components/teacher/Dashboard";
+import AssignmentCreate from "../components/teacher/AssignmentCreate";
+import AssignmentList from "../components/teacher/AssignmentList";
+import AssignmentReview from "../components/teacher/AssignmentReview";
+
+
+type PageType = 'dashboard' | 'assignments/new' | 'assignments' | 'review';
 
 const TeacherPage = () => {
+    const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+
+    const renderContent = () => {
+        switch (currentPage) {
+            case 'dashboard':
+                return <Dashboard />;
+            case 'assignments/new':
+                return <AssignmentCreate />;
+            case 'assignments':
+                return <AssignmentList
+                 />;
+            case 'review':
+                return <AssignmentReview />;
+            default:
+                return null;
+        }
+    };
+
+    const handlePageChange = (page: PageType) => {
+        setCurrentPage(page);
+    };
+
     return (
         <div className="container mt-4">
             <Header />
@@ -10,20 +39,47 @@ const TeacherPage = () => {
                 <nav>
                     <ul className="nav nav-pills gap-2">
                         <li className="nav-item">
-                            <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>대시보드</NavLink>
+                            <a
+                                href="#"
+                                className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`}
+                                onClick={() => handlePageChange('dashboard')}
+                            >
+                                대시보드
+                            </a>
                         </li>
                         <li className="nav-item">
-                            <NavLink to="/assignments/new" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>과제 생성</NavLink>
+                            <a
+                                href="#"
+                                className={`nav-link ${currentPage === 'assignments/new' ? 'active' : ''}`}
+                                onClick={() => handlePageChange('assignments/new')}
+                            >
+                                과제 생성
+                            </a>
                         </li>
                         <li className="nav-item">
-                            <NavLink to="/assignments" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>과제 목록</NavLink>
+                            <a
+                                href="#"
+                                className={`nav-link ${currentPage === 'assignments' ? 'active' : ''}`}
+                                onClick={() => handlePageChange('assignments')}
+                            >
+                                과제 목록
+                            </a>
                         </li>
                         <li className="nav-item">
-                            <NavLink to="/review" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>확인 · 채점</NavLink>
+                            <a
+                                href="#"
+                                className={`nav-link ${currentPage === 'review' ? 'active' : ''}`}
+                                onClick={() => handlePageChange('review')}
+                            >
+                                확인 · 채점
+                            </a>
                         </li>
                     </ul>
                 </nav>
             </header>
+            <div className="w-100">
+                {renderContent()}
+            </div>
         </div>
     );
 };

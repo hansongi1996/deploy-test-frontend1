@@ -85,10 +85,12 @@ const LoginForm = () => {
                     token: token
                 }));
 
-                if (userInfoData.role === "ADMIN" || userInfoData.role === "INSTRUCTOR") {
+                if (userInfoData.role === "ADMIN") {
                     navigate("/admin");
                 } else if (userInfoData.role === "STUDENT") {
                     navigate("/");
+                }else if (userInfoData.role === "TEACHER"){
+                    navigate("/teacher")
                 }
 
             } else {

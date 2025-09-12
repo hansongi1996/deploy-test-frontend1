@@ -173,12 +173,6 @@ function App() {
 
             {/* 강사페이지 */}
             <Route path="/teacher" element={<TeacherPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/assignments-teacher" element={<AssignmentList />} />
-            <Route path="/assignments/new" element={<AssignmentCreate />} />
-            <Route path="/assignments/:id/edit" element={<AssignmentCreate />} />
-            <Route path="/review" element={<AssignmentReview />} />
-            <Route path="/grade" element={<GradePage />} />
           </Routes>
         </Container>
       </div>
