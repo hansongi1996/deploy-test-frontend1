@@ -7,11 +7,8 @@ import ProfilePage from './pages/ProfilePage';
 import LoginForm from './components/auth/LoginForm';
 import RegisterForm from './components/auth/RegisterForm';
 import FindPassword from './components/auth/FindPassword';
-import Mainpage from './components/auth/Mainpage';
 import RegisterSuccess from './components/auth/RegisterSuccess';
 import AdminHome from './components/admin/AdminHome';
-import SignupApprove from './components/admin/SignupApprove';
-import MemberManage from './components/admin/MemberManage';
 import { Container } from 'react-bootstrap';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from './store';
@@ -19,11 +16,6 @@ import { logout, initializeAuth } from './store/slices/authSlice';
 import { useEffect, useRef } from 'react';
 import ResetPassword from './components/auth/ResetPassword';
 import TeacherPage from './pages/TeacherPage';
-import Dashboard from './components/teacher/Dashboard';
-import AssignmentList from './components/teacher/AssignmentList';
-import AssignmentCreate from './components/teacher/AssignmentCreate';
-import AssignmentReview from './components/teacher/AssignmentReview';
-import GradePage from './components/teacher/GradePage';
 
 // Protected Route Component (Redux)
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -120,27 +112,11 @@ function App() {
             <Route path="/register-success" element={<RegisterSuccess />} />
             <Route path="/resetPassword" element={<ResetPassword />} />
 
-            {/* 관리자 메인 페이지 */}
-            <Route path="/adminmain" element={
-              <ProtectedRoute>
-                <Mainpage />
-              </ProtectedRoute>
-            } />
 
             {/* 관리자 기능 */}
             <Route path="/admin" element={
               <ProtectedRoute>
                 <AdminHome />
-              </ProtectedRoute>
-            } />
-            <Route path="/approve" element={
-              <ProtectedRoute>
-                <SignupApprove />
-              </ProtectedRoute>
-            } />
-            <Route path="/member" element={
-              <ProtectedRoute>
-                <MemberManage />
               </ProtectedRoute>
             } />
 
