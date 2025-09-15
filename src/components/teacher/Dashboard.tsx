@@ -47,32 +47,45 @@ export default function Dashboard() {
             새 과제 등록
           </Link>
         </div>
-        <h2 className="text-center mb-4">대시보드</h2>
+        <h2 className="mb-4">대시보드</h2>
         <div className="row g-4">
-          <div className="col-md-6">
+          <div className="col-md-6 fs-4
+          ">
             <Panel title="등록 과제 관리">
-              <div className="p-2 fs-6">
-                {assignments.length > 0 ? (
-                  assignments.map((row) => (
-                    <div
-                      key={row.id}
-                      className="d-flex justify-content-between align-items-center py-1 border-bottom"
-                    >
-                      <span>
-                        {row.title} (~{row.dueDate.replaceAll('-', '.')})
-                      </span>
+              <div className="border rounded">
+                <div className="border-bottom p-2 bg-light fs-6">과제 목록</div>
+                <div className="p-2 fs-6">
+                  {assignments.length > 0 ? (
+                    assignments.map((row) => (
+                      <div
+                        key={row.id}
+                        className="d-flex justify-content-between align-items-center py-1 border-bottom"
+                      >
+                        <span>
+                          {row.title} (마감일 : {new Date(row.dueDate).toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                          })}
+                          {new Date(row.dueDate).toLocaleTimeString('ko-KR', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                          })})
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-secondary py-2">
+                      등록된 과제가 없습니다.
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center text-secondary py-2">
-                    등록된 과제가 없습니다.
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </Panel>
           </div>
 
-          <div className="col-md-6">
+          <div className="col-md-6 fs-4">
             <Panel title="제출 과제 확인">
               <div className="border rounded">
                 <div className="border-bottom p-2 bg-light fs-6">과제 확인</div>
