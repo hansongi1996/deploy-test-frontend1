@@ -67,12 +67,12 @@ export const getChatRooms = async (): Promise<ChatRoom[]> => {
   return response.data;
 };
 
-export const createChatRoom = async (roomName: string, type: ChatRoomType = 'GROUP', targetUserId?: number): Promise<ChatRoom> => {
+export const createChatRoom = async (roomName: string, type: ChatRoomType = 'GROUP', targetUser?: User): Promise<ChatRoom> => {
   const requestData: any = { roomName, type };
   
-  // 1:1 채팅인 경우 상대방 ID 추가
-  if (type === 'ONE_TO_ONE' && targetUserId) {
-    requestData.targetUserId = targetUserId;
+  // 1:1 채팅인 경우 상대방 이메일을 receiverId로 전송
+  if (type === 'ONE_TO_ONE' && targetUser?.email) {
+    requestData.receiverId = targetUser.email;
   }
   
   const response = await api.post('/chatrooms', requestData);
@@ -154,13 +154,13 @@ export const uploadFile = async (file: File): Promise<{ fileUrl: string }> => {
 };
 
 // Notice API functions
-export const getNotices = async (): Promise<Notice[]> => {
-  const response = await api.get('/notices');
+export const getNotices = async (page: number = 0, size: number = 20, sort: string = 'createdAt,desc'): Promise<Notice[]> => {
+  const response = await api.get(`/announcements?page=${page}&size=${size}&sort=${sort}`);
   return response.data;
 };
 
 export const getNotice = async (noticeId: number): Promise<Notice> => {
-  const response = await api.get(`/notices/${noticeId}`);
+  const response = await api.get(`/announcements/${noticeId}`);
   return response.data;
 };
 
@@ -169,7 +169,7 @@ export const createNotice = async (
   content: string,
   isImportant: boolean = false
 ): Promise<Notice> => {
-  const response = await api.post('/notices', {
+  const response = await api.post('/announcements', {
     title,
     content,
     isImportant
@@ -183,7 +183,7 @@ export const updateNotice = async (
   content: string,
   isImportant: boolean = false
 ): Promise<Notice> => {
-  const response = await api.put(`/notices/${noticeId}`, {
+  const response = await api.put(`/announcements/${noticeId}`, {
     title,
     content,
     isImportant
@@ -192,7 +192,7 @@ export const updateNotice = async (
 };
 
 export const deleteNotice = async (noticeId: number): Promise<void> => {
-  await api.delete(`/notices/${noticeId}`);
+  await api.delete(`/announcements/${noticeId}`);
 };
 
 // Auth API functions

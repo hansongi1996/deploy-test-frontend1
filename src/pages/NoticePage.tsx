@@ -21,6 +21,9 @@ const NoticePage: React.FC = () => {
     content: '',
     isImportant: false
   });
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -43,14 +46,75 @@ const NoticePage: React.FC = () => {
     loadNotices();
   }, []);
 
-  const loadNotices = async () => {
+  const loadNotices = async (page: number = 0) => {
     try {
       setLoading(true);
-      const data = await getNotices();
-      setNotices(data);
+      const data = await getNotices(page, 20, 'createdAt,desc');
+      console.log('Raw API response:', data);
+      console.log('Data type:', typeof data);
+      console.log('Is array:', Array.isArray(data));
+      
+      let noticesData: Notice[] = [];
+      
+      // API 응답이 배열인지 확인하고 안전하게 처리
+      if (Array.isArray(data)) {
+        noticesData = data;
+        setTotalPages(1);
+        setTotalElements(data.length);
+      } else if (data && typeof data === 'object') {
+        // 백엔드에서 페이지네이션 객체로 래핑된 경우
+        const dataObj = data as any;
+        
+        if (dataObj.content && Array.isArray(dataObj.content)) {
+          console.log('Found content array:', dataObj.content);
+          console.log('Content array length:', dataObj.content.length);
+          console.log('First item:', dataObj.content[0]);
+          
+          // content 배열의 각 항목이 실제 공지사항인지 확인
+          noticesData = dataObj.content.filter((item: any) => {
+            return item && typeof item === 'object' && 
+                   item.id && 
+                   item.title && 
+                   item.content && 
+                   item.createdAt;
+          });
+          
+          // 페이지네이션 정보 설정
+          setTotalPages(dataObj.totalPages || 1);
+          setTotalElements(dataObj.totalElements || 0);
+          
+          console.log('Filtered notices:', noticesData);
+          console.log('Pagination info:', {
+            totalPages: dataObj.totalPages,
+            totalElements: dataObj.totalElements,
+            currentPage: dataObj.number
+          });
+        } else if (dataObj.data && Array.isArray(dataObj.data)) {
+          noticesData = dataObj.data.filter((item: any) => {
+            return item && typeof item === 'object' && 
+                   item.id && 
+                   item.title && 
+                   item.content && 
+                   item.createdAt;
+          });
+          setTotalPages(dataObj.totalPages || 1);
+          setTotalElements(dataObj.totalElements || 0);
+        } else {
+          console.warn('Unexpected data structure:', data);
+          noticesData = [];
+        }
+      } else {
+        console.warn('Invalid data type received:', typeof data, data);
+        noticesData = [];
+      }
+      
+      console.log('Final notices data:', noticesData);
+      setNotices(noticesData);
+      setCurrentPage(page);
     } catch (err) {
       setError('공지사항을 불러오는데 실패했습니다.');
       console.error('Error loading notices:', err);
+      setNotices([]); // 에러 시 빈 배열로 초기화
     } finally {
       setLoading(false);
     }
@@ -179,12 +243,67 @@ const NoticePage: React.FC = () => {
             </Button>
           </div>
 
-          {/* Notice content placeholder */}
-          <div className="flex-grow-1 d-flex align-items-center justify-content-center">
-            <div className="text-center text-muted">
-              <i className="bi bi-megaphone mb-3" style={{ fontSize: '3rem' }}></i>
-              <p>공지사항 목록이 여기에 표시됩니다.</p>
-            </div>
+          {/* Notice Statistics */}
+          <div className="p-3">
+            <Card className="mb-3">
+              <Card.Header className="bg-light py-2">
+                <h6 className="mb-0">공지사항 현황</h6>
+              </Card.Header>
+              <Card.Body className="py-2">
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="small">전체</span>
+                  <Badge bg="primary" className="small">{notices.length}</Badge>
+                </div>
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="small">중요</span>
+                  <Badge bg="danger" className="small">{notices.filter(n => n.isImportant).length}</Badge>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <span className="small">일반</span>
+                  <Badge bg="secondary" className="small">{notices.filter(n => !n.isImportant).length}</Badge>
+                </div>
+              </Card.Body>
+            </Card>
+
+
+            {/* Recent Notices */}
+            {notices.length > 0 && (
+              <Card>
+                <Card.Header className="bg-light py-2">
+                  <h6 className="mb-0">최근 공지사항</h6>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  <div className="list-group list-group-flush">
+                    {notices
+                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .slice(0, 3)
+                      .map((notice) => (
+                        <div 
+                          key={notice.id}
+                          className="list-group-item list-group-item-action py-2"
+                          onClick={() => handleViewNotice(notice.id)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="d-flex justify-content-between align-items-start mb-1">
+                            <h6 className="mb-0 small text-truncate" style={{ maxWidth: '150px' }}>
+                              {notice.title}
+                            </h6>
+                            {notice.isImportant && (
+                              <Badge bg="danger" className="small">!</Badge>
+                            )}
+                          </div>
+                          <small className="text-muted">
+                            {new Date(notice.createdAt).toLocaleDateString('ko-KR', {
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </small>
+                        </div>
+                      ))}
+                  </div>
+                </Card.Body>
+              </Card>
+            )}
           </div>
         </div>
 
@@ -204,7 +323,7 @@ const NoticePage: React.FC = () => {
 
           {/* Main Content Area */}
           <div className="flex-grow-1 p-4">
-            {notices.length === 0 ? (
+            {!notices || !Array.isArray(notices) || notices.length === 0 ? (
               <div className="d-flex align-items-center justify-content-center h-100">
                 <div className="text-center">
                   <div className="mb-4">
@@ -225,7 +344,7 @@ const NoticePage: React.FC = () => {
         </Alert>
       )}
 
-      {notices.length === 0 ? (
+      {!notices || !Array.isArray(notices) || notices.length === 0 ? (
         <Card className="mx-auto" style={{ maxWidth: '600px' }}>
           <Card.Body className="text-center">
             <p className="text-muted">등록된 공지사항이 없습니다.</p>
@@ -255,7 +374,7 @@ const NoticePage: React.FC = () => {
                     }
                   </p>
                   <small className="text-muted">
-                    작성자: {notice.author.fullName}
+                    작성자: {notice.author?.fullName || notice.author?.username || '알 수 없음'}
                   </small>
                 </Card.Body>
                 <Card.Footer>
@@ -293,6 +412,72 @@ const NoticePage: React.FC = () => {
         </div>
       )}
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="d-flex justify-content-center mt-4">
+          <nav>
+            <ul className="pagination">
+              <li className={`page-item ${currentPage === 0 ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link" 
+                  onClick={() => loadNotices(0)}
+                  disabled={currentPage === 0}
+                >
+                  처음
+                </button>
+              </li>
+              <li className={`page-item ${currentPage === 0 ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link" 
+                  onClick={() => loadNotices(currentPage - 1)}
+                  disabled={currentPage === 0}
+                >
+                  이전
+                </button>
+              </li>
+              
+              {/* 페이지 번호들 */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const startPage = Math.max(0, currentPage - 2);
+                const pageNum = startPage + i;
+                if (pageNum >= totalPages) return null;
+                
+                return (
+                  <li key={pageNum} className={`page-item ${currentPage === pageNum ? 'active' : ''}`}>
+                    <button 
+                      className="page-link" 
+                      onClick={() => loadNotices(pageNum)}
+                    >
+                      {pageNum + 1}
+                    </button>
+                  </li>
+                );
+              })}
+              
+              <li className={`page-item ${currentPage === totalPages - 1 ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link" 
+                  onClick={() => loadNotices(currentPage + 1)}
+                  disabled={currentPage === totalPages - 1}
+                >
+                  다음
+                </button>
+              </li>
+              <li className={`page-item ${currentPage === totalPages - 1 ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link" 
+                  onClick={() => loadNotices(totalPages - 1)}
+                  disabled={currentPage === totalPages - 1}
+                >
+                  마지막
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
+
+
       {/* View Notice Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
@@ -308,7 +493,7 @@ const NoticePage: React.FC = () => {
             <div>
               <div className="mb-3">
                 <small className="text-muted">
-                  작성자: {selectedNotice.author.fullName} | 
+                  작성자: {selectedNotice.author?.fullName || selectedNotice.author?.username || '알 수 없음'} | 
                   작성일: {formatDate(selectedNotice.createdAt)}
                 </small>
               </div>

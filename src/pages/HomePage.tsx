@@ -94,7 +94,7 @@ const HomePage: React.FC = () => {
       const newRoom = await createChatRoom(
         newRoomName.trim(), 
         newRoomType, 
-        newRoomType === 'ONE_TO_ONE' ? selectedUser?.id : undefined
+        newRoomType === 'ONE_TO_ONE' ? selectedUser || undefined : undefined
       );
       
       // 방 생성 성공 후 목록에 추가
