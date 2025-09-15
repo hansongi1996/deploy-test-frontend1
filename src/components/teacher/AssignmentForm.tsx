@@ -38,9 +38,8 @@ export default function AssignmentForm({
         await onSubmit({ title, description, dueDate });
     };
 
-    // '초기화' 버튼 대신 '뒤로' 버튼의 역할을 수행하도록 수정
     const handleGoBack = () => {
-        onCancel(); // 상위 컴포넌트에서 전달받은 onCancel 함수를 호출하여 뒤로가기 처리를 위임합니다.
+        onCancel();
     };
 
     return (

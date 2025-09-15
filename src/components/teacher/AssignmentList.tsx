@@ -57,13 +57,14 @@ export default function AssignmentList() {
 
   return (
     <div className="d-flex justify-content-center">
-      <div className="w-75">
+      <div className="w-75 fs-3">
         <Panel title="과제 리스트">
           <div className="fs-6">
             {/* 헤더 */}
             <div className="d-flex border-bottom pb-2 fw-bold text-center">
-              <span className="col-4">제목</span>
+              <span className="col-3">제목</span>
               <span className="col-2">마감일</span>
+              <span className="col-5">설명</span>
               <span className="col-2 ">작업</span>
             </div>
 
@@ -71,9 +72,9 @@ export default function AssignmentList() {
             {items.length > 0 ? (
               items.map((assignment) => (
                 <div key={assignment.id} className="d-flex align-items-center py-2 border-bottom text-center">
-                  <span className="col-4">{assignment.title}</span>
+                  <span className="col-3">{assignment.title}</span>
                   <span className="col-2">{assignment.dueDate}</span>
-
+                  <span className="col-5 text-truncate">{assignment.description}</span> {/* text-truncate 클래스 추가 */}
                   <div className="col-2 d-flex gap-2 justify-content-center">
                     <button onClick={() => navigate(`/assignments/${assignment.id}/edit`, { state: { assignment } })} className="btn btn-primary btn-sm p-2">
                       수정

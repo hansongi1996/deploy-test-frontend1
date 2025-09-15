@@ -46,12 +46,10 @@ export default function AssignmentEdit() {
   const initialValues = {
     title: editTarget.title,
     description: editTarget.description ?? '',
-    // 기존 마감일 값도 datetime-local 형식으로 변환합니다.
     dueDate: editTarget.dueDate.substring(0, 16),
   };
 
   return (
-
       <AssignmentForm
         title={initialValues.title}
         description={initialValues.description}
