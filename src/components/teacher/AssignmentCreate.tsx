@@ -3,7 +3,7 @@
 import { useNavigate } from "react-router-dom";
 import { createAssignment } from "../../api";
 import { useMemo } from "react";
-import AssignmentForm from "./AssignmentFom";
+import AssignmentForm from "./AssignmentForm";
 
 export default function AssignmentCreate() {
   const navigate = useNavigate();

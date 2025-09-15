@@ -17,6 +17,10 @@ import { useEffect, useRef } from 'react';
 import ResetPassword from './components/auth/ResetPassword';
 import TeacherPage from './pages/TeacherPage';
 import AlarmPage from './pages/AlarmPage';
+import AssignmentEdit from './components/teacher/AssignmentEdit';
+import AssignmentCreate from './components/teacher/AssignmentCreate';
+import AssignmentReview from './components/teacher/AssignmentReview';
+import GradePage from './components/teacher/GradePage';
 
 // Protected Route Component (Redux)
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -151,6 +155,10 @@ function App() {
 
             {/* 강사페이지 */}
             <Route path="/teacher" element={<TeacherPage />} />
+            <Route path="/assignments/:id/edit" element={<AssignmentEdit />} />
+            <Route path="/assignments/new" element={<AssignmentCreate />} />
+            <Route path="/assignments/:id/review" element={<AssignmentReview />} />
+            <Route path="/assignments/submissions/:id/grade" element={<GradePage />} />
           </Routes>
         </Container>
       </div>
