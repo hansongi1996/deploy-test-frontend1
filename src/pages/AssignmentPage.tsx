@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, Alert, Spinner, Badge, ProgressBar, Tab, Tabs, ListGroup } from 'react-bootstrap';
+import { Container, Card, Button, Form, Alert, Spinner, Badge, ProgressBar, Tab, Tabs, ListGroup } from 'react-bootstrap';
 import { getAssignments, submitAssignment, uploadFile } from '../api';
 import type { Assignment } from '../types';
 import { useSelector } from 'react-redux';
@@ -8,7 +8,7 @@ import Header from '../components/Header';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const AssignmentPage: React.FC = () => {
-  const { user } = useSelector((state: RootState) => state.auth);
+  useSelector((state: RootState) => state.auth);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [loading, setLoading] = useState(true);

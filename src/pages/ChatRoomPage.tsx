@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from 'react-bootstrap';
 import type { ChatMessage, ChatRoomParticipant } from '../types';
-import { joinChatRoom, leaveChatRoom, getRoomParticipants, getChatMessages } from '../api';
+import { joinChatRoom, leaveChatRoom, getRoomParticipants, getChatMessages, getChatRooms } from '../api';
 import socketService from '../services/socketService';
 import MessageBubble from '../components/MessageBubble';
 import MessageInput from '../components/MessageInput';
@@ -35,27 +35,50 @@ const ChatRoomPage: React.FC = () => {
         
         // 1. 채팅방 참여 시도 (실패해도 계속 진행)
         try {
+          console.log(`[ChatRoom] Attempting to join room ${roomId}...`);
           await joinChatRoom(parseInt(roomId));
-          console.log('Successfully joined room');
-        } catch (joinError) {
-          console.warn('Failed to join room via API, but continuing with WebSocket connection:', joinError);
+          console.log(`[ChatRoom] Successfully joined room ${roomId}`);
+        } catch (joinError: any) {
+          console.warn(`[ChatRoom] Failed to join room ${roomId} via API, but continuing with WebSocket connection:`, joinError);
+          console.warn(`[ChatRoom] Join error details:`, {
+            status: joinError.response?.status,
+            statusText: joinError.response?.statusText,
+            data: joinError.response?.data,
+            message: joinError.message
+          });
         }
         
-        // 2. 참여자 목록 로드 시도 (실패해도 계속 진행)
+        // 2. 채팅방 정보 로드 (채팅방 목록에서 해당 방 찾기)
+        try {
+          const allRooms = await getChatRooms();
+          console.log('All rooms from API:', allRooms);
+          const currentRoom = allRooms.find(room => room.id === parseInt(roomId));
+          console.log('Current room found:', currentRoom);
+          if (currentRoom) {
+            console.log('Setting room type to:', currentRoom.type);
+            setRoomType(currentRoom.type);
+            console.log('Successfully loaded room info from rooms list, room type:', currentRoom.type);
+          } else {
+            console.warn('Room not found in rooms list, using default GROUP type');
+            setRoomType('GROUP');
+          }
+        } catch (roomError) {
+          console.warn('Failed to load room info from rooms list:', roomError);
+          setRoomType('GROUP'); // 기본값으로 그룹 채팅 설정
+        }
+
+        // 3. 참여자 목록 로드 시도 (실패해도 계속 진행)
         try {
           const participantData = await getRoomParticipants(parseInt(roomId));
           setParticipants(participantData);
-          // 참여자 수로 채팅방 타입 구분 (2명이면 1:1 채팅)
-          setRoomType(participantData.length === 2 ? 'ONE_TO_ONE' : 'GROUP');
-          console.log('Successfully loaded participants, room type:', participantData.length === 2 ? 'ONE_TO_ONE' : 'GROUP');
+          console.log('Successfully loaded participants:', participantData.length);
         } catch (participantError) {
           console.warn('Failed to load participants:', participantError);
           // 빈 참여자 목록으로 설정
           setParticipants([]);
-          setRoomType('GROUP'); // 기본값으로 그룹 채팅 설정
         }
         
-        // 3. 채팅 히스토리 로드 시도 (실패해도 계속 진행)
+        // 4. 채팅 히스토리 로드 시도 (실패해도 계속 진행)
         try {
           setMessagesLoading(true);
           console.log(`[ChatRoom] Loading chat history for room ID: ${roomId}`);
@@ -98,14 +121,15 @@ const ChatRoomPage: React.FC = () => {
       subscribedRef.current = true;
 
       try {
-        console.log('Attempting to connect to WebSocket...');
+        console.log('[ChatRoom] Attempting to connect to WebSocket...');
         await socketService.connect();
-        console.log('WebSocket connected successfully');
-        console.log('Socket connection status:', socketService.connected);
+        console.log('[ChatRoom] WebSocket connected successfully');
+        console.log('[ChatRoom] Socket connection status:', socketService.connected);
+        console.log('[ChatRoom] Current room type:', roomType);
         
         // 채팅방 타입에 따라 구독 경로 결정
         const subscriptionPath = roomType === 'ONE_TO_ONE' 
-          ? `/queue/messages/${roomId}` 
+          ? `/topic/messages/${roomId}` 
           : `/topic/rooms/${roomId}`;
         console.log('Subscribing to:', subscriptionPath, 'for room type:', roomType);
         
@@ -115,6 +139,8 @@ const ChatRoomPage: React.FC = () => {
           console.log(`[CHAT] Message received on topic ${subscriptionPath}:`, message);
           console.log('[CHAT] Message body:', message.body);
           console.log('[CHAT] Message headers:', message.headers);
+          console.log('[CHAT] Room type:', roomType);
+          console.log('[CHAT] Room ID:', roomId);
           
           try {
             const raw = JSON.parse(message.body);
@@ -145,15 +171,15 @@ const ChatRoomPage: React.FC = () => {
                 return prev;
               }
               
-              // 3. 같은 내용+시간+발신자 조합이 있는지 확인
+              // 3. 같은 내용+시간+발신자 조합이 있는지 확인 (내가 보낸 메시지 중복 방지)
               const isDuplicate = prev.some(msg => 
                 msg.content === newMessage.content && 
-                msg.createdAt === newMessage.createdAt && 
+                Math.abs(new Date(msg.createdAt).getTime() - new Date(newMessage.createdAt).getTime()) < 5000 && // 5초 이내
                 msg.sender?.username === newMessage.sender?.username
               );
               
               if (isDuplicate) {
-                console.log('[CHAT] Duplicate content detected, skipping');
+                console.log('[CHAT] Duplicate content detected (likely my own message), skipping');
                 return prev;
               }
               
@@ -209,7 +235,7 @@ const ChatRoomPage: React.FC = () => {
         // 새로운 구독 설정
         await socketService.connect();
         const subscriptionPath = roomType === 'ONE_TO_ONE' 
-          ? `/queue/messages/${roomId}` 
+          ? `/topic/messages/${roomId}` 
           : `/topic/rooms/${roomId}`;
         
         console.log('Updating subscription to:', subscriptionPath, 'for room type:', roomType);
@@ -276,7 +302,7 @@ const ChatRoomPage: React.FC = () => {
     }
 
     // 메시지 타입에 따른 형식
-    const messageToSend = { 
+    const messageToSend: any = { 
       content, 
       roomId: parseInt(roomId),
       timestamp: new Date().toISOString(),
@@ -284,26 +310,46 @@ const ChatRoomPage: React.FC = () => {
       type: messageType
     };
     
+    // 1:1 채팅인 경우 상대방 이메일 추가
+    if (roomType === 'ONE_TO_ONE' && participants.length >= 2) {
+      const receiver = participants.find(p => p.id !== user?.id);
+      if (receiver && receiver.email) {
+        messageToSend.receiverId = receiver.email;
+        console.log('[ChatRoom] 1:1 chat - adding receiverId (email):', receiver.email);
+      } else {
+        console.warn('[ChatRoom] 1:1 chat - receiver email not found');
+      }
+    }
+    
     const endpoint = `/app/chat/rooms/${roomId}`;
     
-    console.log('Sending message:', messageToSend);
-    console.log('Socket connected:', socketService.connected);
-    console.log('Publishing to:', endpoint);
+    console.log('[ChatRoom] Sending message:', messageToSend);
+    console.log('[ChatRoom] Socket connected:', socketService.connected);
+    console.log('[ChatRoom] Publishing to:', endpoint, 'for room type:', roomType);
+    console.log('[ChatRoom] Current user:', user);
+    console.log('[ChatRoom] Room ID:', roomId);
+    console.log('[ChatRoom] Participants:', participants);
+    console.log('[ChatRoom] Room type:', roomType);
+    
+    // 메시지 전송 전에 즉시 로컬에 추가 (실시간 렌더링을 위해)
+    const tempMessage: ChatMessage = {
+      id: Math.floor(Math.random() * 1e9),
+      content,
+      createdAt: new Date().toISOString(),
+      sender: { id: user?.id || 0, username: user?.username || 'You', fullName: user?.fullName || 'You' },
+      messageType: messageType,
+    };
+    
+    // 즉시 UI에 메시지 추가
+    setMessages(prev => [...prev, tempMessage]);
+    console.log('✅ Message added to UI immediately');
     
     try {
       await socketService.publish(endpoint, messageToSend);
       console.log('✅ Message sent successfully to server');
     } catch (error) {
       console.error('❌ Failed to send message:', error);
-      // WebSocket 실패 시 로컬에 메시지 추가 (임시)
-      const tempMessage: ChatMessage = {
-        id: Math.floor(Math.random() * 1e9),
-        content,
-        createdAt: new Date().toISOString(),
-        sender: { id: user?.id || 0, username: user?.username || 'You', fullName: user?.fullName || 'You' },
-        messageType: 'TEXT',
-      };
-      setMessages(prev => [...prev, tempMessage]);
+      // WebSocket 실패 시 메시지는 이미 UI에 추가되어 있음
     }
   };
 
@@ -380,7 +426,12 @@ const ChatRoomPage: React.FC = () => {
             </div>
             <div>
               <h5 className="mb-0">
-                {roomType === 'ONE_TO_ONE' ? '1:1 채팅' : `Room #${roomId}`}
+                {roomType === 'ONE_TO_ONE' ? 
+                  (participants.length >= 2 ? 
+                    participants.find(p => p.id !== user?.id)?.nickname || 
+                    participants.find(p => p.id !== user?.id)?.username || 
+                    '1:1 채팅' : '1:1 채팅') : 
+                  `Room #${roomId}`}
               </h5>
               <small className="text-muted">
                 {participants.length}명 참여중

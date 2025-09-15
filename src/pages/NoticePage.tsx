@@ -23,7 +23,7 @@ const NoticePage: React.FC = () => {
   });
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalElements, setTotalElements] = useState(0);
+  const [, setTotalElements] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 

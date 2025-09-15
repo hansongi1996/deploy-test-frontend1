@@ -48,6 +48,7 @@ export interface ChatRoomParticipant {
   id: number;
   username: string;
   nickname: string;
+  email?: string;
   role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
   status: 'PENDING' | 'ACTIVE' | 'LEFT';
 }

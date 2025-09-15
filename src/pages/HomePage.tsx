@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Form, InputGroup } from 'react-bootstrap';
-import { getChatRooms, createChatRoom, joinChatRoom, deleteChatRoom } from '../api';
+import { getChatRooms, createChatRoom, joinChatRoom, leaveChatRoom } from '../api';
 import type { ChatRoom, ChatRoomType, User } from '../types';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
@@ -143,21 +143,21 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleDeleteRoom = async (roomId: number, roomName: string) => {
-    if (!window.confirm(`'${roomName}' 채팅방을 삭제하시겠습니까?`)) {
+  const handleLeaveRoom = async (roomId: number, roomName: string) => {
+    if (!window.confirm(`'${roomName}' 채팅방에서 나가시겠습니까?`)) {
       return;
     }
 
     try {
       setLoading(true);
-      await deleteChatRoom(roomId);
+      await leaveChatRoom(roomId);
       
-      // 삭제 성공 후 목록에서 제거
+      // 나가기 성공 후 목록에서 제거
       setRooms(prev => prev.filter(room => room.id !== roomId));
-      console.log('Successfully deleted room:', roomName);
+      console.log('Successfully left room:', roomName);
     } catch (error: any) {
-      console.error('Failed to delete room:', error);
-      alert(`채팅방 삭제에 실패했습니다: ${error.response?.data?.message || '알 수 없는 오류'}`);
+      console.error('Failed to leave room:', error);
+      alert(`채팅방 나가기에 실패했습니다: ${error.response?.data?.message || '알 수 없는 오류'}`);
     } finally {
       setLoading(false);
     }
@@ -301,7 +301,7 @@ const HomePage: React.FC = () => {
                           className="p-1 text-danger"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteRoom(room.id, room.roomName);
+                            handleLeaveRoom(room.id, room.roomName);
                           }}
                           disabled={loading}
                         >

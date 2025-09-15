@@ -67,6 +67,12 @@ export const getChatRooms = async (): Promise<ChatRoom[]> => {
   return response.data;
 };
 
+// Get individual chat room info
+export const getChatRoom = async (roomId: number): Promise<ChatRoom> => {
+  const response = await api.get(`/chatrooms/${roomId}`);
+  return response.data;
+};
+
 export const createChatRoom = async (roomName: string, type: ChatRoomType = 'GROUP', targetUser?: User): Promise<ChatRoom> => {
   const requestData: any = { roomName, type };
   
