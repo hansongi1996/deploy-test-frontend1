@@ -3,7 +3,7 @@
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import type { Assignment } from "../../types";
 import { updateAssignment } from "../../api";
-import AssignmentForm from "./AssignmentFom";
+import AssignmentForm from "./AssignmentForm";
 
 export default function AssignmentEdit() {
   const params = useParams();
@@ -38,7 +38,7 @@ export default function AssignmentEdit() {
   const handleCancel = () => {
     navigate(-1);
   };
-  
+
   if (!editTarget) {
     return <div>잘못된 접근입니다.</div>
   }
@@ -51,13 +51,14 @@ export default function AssignmentEdit() {
   };
 
   return (
-    <AssignmentForm
-      title={initialValues.title}
-      description={initialValues.description}
-      dueDate={initialValues.dueDate}
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      isEdit={true}
-    />
+
+      <AssignmentForm
+        title={initialValues.title}
+        description={initialValues.description}
+        dueDate={initialValues.dueDate}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        isEdit={true}
+      />
   );
 }

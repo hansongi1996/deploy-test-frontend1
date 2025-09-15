@@ -28,7 +28,7 @@ const Header: React.FC = () => {
   return (
     <div className="bg-white border-bottom">
       <div className="d-flex justify-content-between align-items-center p-3">
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center ">
           <h4 className="mb-0 text-dark">PeerFlow</h4>
         </div>
         <div className="d-flex align-items-center gap-3">

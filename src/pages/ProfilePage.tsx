@@ -10,7 +10,7 @@ const ProfilePage: React.FC = () => {
   const userId = user?.id ?? 0; // 로그인 연동 전이라면 임시값 0, 실제론 반드시 유저 id 사용
 
   return (
-    <div className="d-flex flex-column" style={{ height: '100vh' }}>
+    <div className="d-flex flex-column w-100"  style={{ height: '100vh' }}>
       <Header />
       
       <Container className="py-4">

@@ -21,6 +21,7 @@ import AssignmentEdit from './components/teacher/AssignmentEdit';
 import AssignmentCreate from './components/teacher/AssignmentCreate';
 import AssignmentReview from './components/teacher/AssignmentReview';
 import GradePage from './components/teacher/GradePage';
+import Header from './components/Header';
 
 // Protected Route Component (Redux)
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -155,8 +156,16 @@ function App() {
 
             {/* 강사페이지 */}
             <Route path="/teacher" element={<TeacherPage />} />
-            <Route path="/assignments/:id/edit" element={<AssignmentEdit />} />
-            <Route path="/assignments/new" element={<AssignmentCreate />} />
+            <Route path="/assignments/:id/edit" element={
+              <div className='d-flex flex-column w-100'>
+                <Header />
+                <AssignmentEdit />
+              </div>} />
+            <Route path="/assignments/new" element={
+              <div className='d-flex flex-column w-100'>
+                <Header />
+                <AssignmentCreate />
+              </div>} />
             <Route path="/assignments/:id/review" element={<AssignmentReview />} />
             <Route path="/assignments/submissions/:id/grade" element={<GradePage />} />
           </Routes>
