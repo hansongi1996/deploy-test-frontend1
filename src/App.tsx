@@ -66,9 +66,9 @@ function App() {
             dispatch(initializeAuth({
               id: userInfoData.id,
               username: userInfoData.username,
-              fullName: userInfoData.fullName || userInfoData.username,
+              fullName: userInfoData.fullName || userInfoData.nickName || userInfoData.username,
               email: userInfoData.email,
-              role: userInfoData.role,
+              role: userInfoData.role || 'STUDENT',
               token: authToken
             }));
           } else {

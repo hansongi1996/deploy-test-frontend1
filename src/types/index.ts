@@ -30,8 +30,9 @@ export interface ChatMessage {
   id: number;
   content: string;
   sender: User;
-  messageType: 'TEXT' | 'ENTER' | 'LEAVE';
+  messageType: 'TEXT' | 'IMAGE' | 'FILE' | 'ENTER' | 'LEAVE';
   createdAt: string;
+  sentAtEpochMs?: number; // Optional timestamp in milliseconds
 }
 
 export type ChatRoomType = 'ONE_TO_ONE' | 'GROUP';

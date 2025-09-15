@@ -101,7 +101,7 @@ const authSlice = createSlice({
         clearError: (state) => {
             state.error = null;
         },
-        initializeAuth: (state, action) => {
+        initializeAuth: (state, action: PayloadAction<AuthUser | null>) => {
             state.user = action.payload;
             state.isAuthenticated = !!action.payload;
             state.isLoading = false;
@@ -109,14 +109,14 @@ const authSlice = createSlice({
         setLoading: (state, action: PayloadAction<boolean>) => {
             state.isLoading = action.payload;
         },
-        setUserData: (state, action) => {
+        setUserData: (state, action: PayloadAction<Partial<AuthUser>>) => {
             state.user = {
                 id: action.payload.id || 0,
                 username: action.payload.username || '',
-                fullName: action.payload.fullName || action.payload.username || '',
+                fullName: action.payload.fullName || action.payload.nickName || action.payload.username || '',
                 email: action.payload.email || '',
-                role: action.payload.role,
-                token: action.payload.token,
+                role: action.payload.role || 'STUDENT',
+                token: action.payload.token || '',
             } as AuthUser;
             state.isAuthenticated = true;
         },

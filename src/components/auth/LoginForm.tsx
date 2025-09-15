@@ -79,6 +79,7 @@ const LoginForm = () => {
                 dispatch(setUserData({
                     id: userInfoData.id,
                     username: userInfoData.username,
+                    fullName: userInfoData.fullName || userInfoData.nickName || userInfoData.username,
                     nickName: userInfoData.nickName || userInfoData.username,
                     email: userInfoData.email,
                     role: userInfoData.role,

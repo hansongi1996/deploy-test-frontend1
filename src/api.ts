@@ -8,7 +8,8 @@ import type {
   AssignmentSubmission,
   Notice,
   LoginRequest,
-  LoginResponse
+  LoginResponse,
+  User
 } from './types';
 
 // === 세션/로컬 저장소 모두에서 토큰을 읽어오기 (세션 우선) ===
@@ -52,6 +53,10 @@ api.interceptors.response.use(
       localStorage.removeItem('tokenExpiry');
 
       window.location.href = '/login';
+    } else if (error.response?.status === 403) {
+      // 403 Forbidden - 권한 없음
+      console.warn('Access forbidden (403) - insufficient permissions');
+      // 403 오류는 로그아웃하지 않고 그대로 전달
     }
     return Promise.reject(error);
   }
@@ -62,8 +67,15 @@ export const getChatRooms = async (): Promise<ChatRoom[]> => {
   return response.data;
 };
 
-export const createChatRoom = async (roomName: string, type: ChatRoomType = 'GROUP'): Promise<ChatRoom> => {
-  const response = await api.post('/chatrooms', { roomName, type });
+export const createChatRoom = async (roomName: string, type: ChatRoomType = 'GROUP', targetUserId?: number): Promise<ChatRoom> => {
+  const requestData: any = { roomName, type };
+  
+  // 1:1 채팅인 경우 상대방 ID 추가
+  if (type === 'ONE_TO_ONE' && targetUserId) {
+    requestData.targetUserId = targetUserId;
+  }
+  
+  const response = await api.post('/chatrooms', requestData);
   return response.data;
 };
 
@@ -93,7 +105,9 @@ export const getRoomParticipants = async (roomId: number): Promise<ChatRoomParti
 
 // Get chat room messages (history)
 export const getChatMessages = async (roomId: number): Promise<ChatMessage[]> => {
+  console.log(`[API] Fetching chat messages for room ID: ${roomId}`);
   const response = await api.get(`/chatrooms/${roomId}/messages`);
+  console.log(`[API] Received chat messages:`, response.data);
   return response.data;
 };
 
@@ -214,6 +228,12 @@ export const uploadAvatar = async (
 
 export const deleteAvatar = async (userId: number): Promise<void> => {
   await api.delete(`/users/${userId}/avatar`);
+};
+
+// Get all users for 1:1 chat partner selection
+export const getAllUsers = async (): Promise<User[]> => {
+  const response = await api.get('/users/all');
+  return response.data;
 };
 
 // ✅ AvatarUploader.tsx 가 기대하는 export 이름을 alias 로 제공

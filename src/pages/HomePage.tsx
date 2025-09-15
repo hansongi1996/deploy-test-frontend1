@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Form, InputGroup } from 'react-bootstrap';
 import { getChatRooms, createChatRoom, joinChatRoom, deleteChatRoom } from '../api';
-import type { ChatRoom, ChatRoomType } from '../types';
+import type { ChatRoom, ChatRoomType, User } from '../types';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import Header from '../components/Header';
+import UserSelectionModal from '../components/UserSelectionModal';
 
 const HomePage: React.FC = () => {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
@@ -14,6 +15,8 @@ const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [showUserSelectionModal, setShowUserSelectionModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -42,16 +45,36 @@ const HomePage: React.FC = () => {
   const loadRooms = async () => {
     try {
       setLoading(true);
+      
+      // 토큰 상태 확인
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) {
+        console.warn('No auth token found - user may need to login again');
+        setRooms([]);
+        return;
+      }
+      
       const data = await getChatRooms();
       setRooms(data);
       console.log('Successfully loaded chat rooms:', data.length);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load rooms:', error);
-      console.warn('Continuing with empty room list - users can still create new rooms');
-      setRooms([]);
       
-      // 사용자에게 알림 (선택사항)
-      // alert('채팅방 목록을 불러올 수 없습니다. 새 방을 만들어보세요!');
+      if (error.response?.status === 403) {
+        console.warn('403 Forbidden - insufficient permissions to view chat rooms');
+        // 403 오류 시 사용자에게 알림
+        alert('채팅방 목록을 볼 권한이 없습니다. 관리자에게 문의하세요.');
+      } else if (error.response?.status === 401) {
+        console.warn('401 Unauthorized - token may be expired');
+        alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+        window.location.href = '/login';
+        return;
+      } else {
+        console.warn('Continuing with empty room list - users can still create new rooms');
+        // 네트워크 오류 등 기타 오류의 경우 조용히 처리
+      }
+      
+      setRooms([]);
     } finally {
       setLoading(false);
     }
@@ -60,14 +83,25 @@ const HomePage: React.FC = () => {
   const handleCreateRoom = async () => {
     if (!newRoomName.trim()) return;
 
+    // 1:1 채팅인 경우 상대방이 선택되지 않았다면 모달 표시
+    if (newRoomType === 'ONE_TO_ONE' && !selectedUser) {
+      setShowUserSelectionModal(true);
+      return;
+    }
+
     try {
       setLoading(true);
-      const newRoom = await createChatRoom(newRoomName.trim(), newRoomType);
+      const newRoom = await createChatRoom(
+        newRoomName.trim(), 
+        newRoomType, 
+        newRoomType === 'ONE_TO_ONE' ? selectedUser?.id : undefined
+      );
       
       // 방 생성 성공 후 목록에 추가
       setRooms((prev) => [...prev, newRoom]);
       setNewRoomName('');
       setNewRoomType('GROUP'); // Reset to default
+      setSelectedUser(null); // Reset selected user
       
       console.log('Successfully created room:', newRoom.roomName);
       
@@ -129,6 +163,22 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const handleUserSelect = (selectedUser: User) => {
+    setSelectedUser(selectedUser);
+    setShowUserSelectionModal(false);
+  };
+
+  const handleRoomTypeChange = (type: ChatRoomType) => {
+    setNewRoomType(type);
+    // 채팅방 타입이 변경되면 선택된 사용자 초기화
+    if (type !== 'ONE_TO_ONE') {
+      setSelectedUser(null);
+    } else if (type === 'ONE_TO_ONE' && !selectedUser) {
+      // 1:1 채팅으로 변경하고 아직 사용자가 선택되지 않았다면 모달 열기
+      setShowUserSelectionModal(true);
+    }
+  };
+
   return (
     <div className="d-flex flex-column" style={{ height: '100vh' }}>
       <Header />
@@ -167,14 +217,27 @@ const HomePage: React.FC = () => {
             <div className="p-3 border-bottom">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <h5 className="mb-0">채팅</h5>
-                <Button 
-                  variant="link" 
-                  size="sm" 
-                  className="p-1 text-primary"
-                  onClick={() => setShowSearch(!showSearch)}
-                >
-                  <i className="bi bi-search"></i>
-                </Button>
+                <div className="d-flex gap-1">
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    className="p-1 text-primary"
+                    onClick={() => setShowSearch(!showSearch)}
+                    title="검색"
+                  >
+                    <i className="bi bi-search"></i>
+                  </Button>
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    className="p-1 text-secondary"
+                    onClick={loadRooms}
+                    disabled={loading}
+                    title="새로고침"
+                  >
+                    <i className={`bi bi-arrow-clockwise ${loading ? 'spinning' : ''}`}></i>
+                  </Button>
+                </div>
               </div>
               {showSearch && (
                 <div className="mt-2">
@@ -225,7 +288,7 @@ const HomePage: React.FC = () => {
                           </small>
                         </div>
                         <p className="mb-0 text-muted small">
-                          그룹 채팅
+                          {room.type === 'ONE_TO_ONE' ? '1:1 채팅' : '그룹 채팅'}
                         </p>
                       </div>
                       <div className="d-flex align-items-center gap-2">
@@ -250,16 +313,26 @@ const HomePage: React.FC = () => {
                 ) : (
                   <div className="text-center text-muted p-4">
                     {loading ? (
-                      '채팅방 목록을 불러오는 중...'
+                      <div>
+                        <div className="spinner-border text-primary mb-3" role="status">
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
+                        <p>채팅방 목록을 불러오는 중...</p>
+                      </div>
                     ) : searchTerm ? (
                       <div>
+                        <i className="bi bi-search mb-3" style={{ fontSize: '2rem' }}></i>
                         <p>'{searchTerm}'에 대한 검색 결과가 없습니다.</p>
                         <p>다른 검색어를 시도해보세요.</p>
                       </div>
                     ) : (
                       <div>
+                        <i className="bi bi-chat-dots mb-3" style={{ fontSize: '2rem' }}></i>
                         <p>현재 사용 가능한 채팅방이 없습니다.</p>
                         <p>새로운 채팅방을 만들어보세요!</p>
+                        <small className="text-muted">
+                          채팅방 목록을 불러오지 못한 경우, 새로고침을 시도해보세요.
+                        </small>
                       </div>
                     )}
                   </div>
@@ -268,7 +341,7 @@ const HomePage: React.FC = () => {
 
               {/* Create Room Section */}
               <div className="p-3 border-top bg-white">
-                <InputGroup>
+                <InputGroup className="mb-2">
                   <Form.Control
                     type="text"
                     placeholder="새 채팅방 이름"
@@ -281,7 +354,7 @@ const HomePage: React.FC = () => {
                   />
                   <Form.Select
                     value={newRoomType}
-                    onChange={(e) => setNewRoomType(e.target.value as ChatRoomType)}
+                    onChange={(e) => handleRoomTypeChange(e.target.value as ChatRoomType)}
                     size="sm"
                     style={{ maxWidth: '100px' }}
                   >
@@ -297,6 +370,45 @@ const HomePage: React.FC = () => {
                     {loading ? '생성중...' : '생성'}
                   </Button>
                 </InputGroup>
+                
+                {/* 1:1 채팅 선택된 사용자 표시 */}
+                {newRoomType === 'ONE_TO_ONE' && selectedUser && (
+                  <div className="d-flex align-items-center justify-content-between bg-light p-2 rounded">
+                    <div className="d-flex align-items-center">
+                      <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
+                           style={{ width: '30px', height: '30px', fontSize: '12px' }}>
+                        {(selectedUser.fullName && selectedUser.fullName.charAt(0)) || (selectedUser.username && selectedUser.username.charAt(0)) || '?'}
+                      </div>
+                      <div>
+                        <small className="fw-bold">{selectedUser.fullName || '이름 없음'}</small>
+                        <br />
+                        <small className="text-muted">@{selectedUser.username || 'username 없음'}</small>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="p-1 text-danger"
+                      onClick={() => setSelectedUser(null)}
+                    >
+                      <i className="bi bi-x"></i>
+                    </Button>
+                  </div>
+                )}
+                
+                {/* 1:1 채팅이지만 사용자가 선택되지 않은 경우 */}
+                {newRoomType === 'ONE_TO_ONE' && !selectedUser && (
+                  <div className="text-center py-2">
+                    <Button 
+                      variant="outline-primary" 
+                      size="sm"
+                      onClick={() => setShowUserSelectionModal(true)}
+                    >
+                      <i className="bi bi-person-plus me-1"></i>
+                      상대방 선택
+                    </Button>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -344,6 +456,14 @@ const HomePage: React.FC = () => {
           )}
         </div>
       </div>
+      
+      {/* User Selection Modal */}
+      <UserSelectionModal
+        show={showUserSelectionModal}
+        onHide={() => setShowUserSelectionModal(false)}
+        onSelectUser={handleUserSelect}
+        currentUserId={user?.id}
+      />
     </div>
   );
 };

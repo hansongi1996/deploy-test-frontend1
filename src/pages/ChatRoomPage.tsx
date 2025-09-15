@@ -16,6 +16,7 @@ const ChatRoomPage: React.FC = () => {
   const [participants, setParticipants] = useState<ChatRoomParticipant[]>([]);
   const [loading, setLoading] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(true);
+  const [roomType, setRoomType] = useState<'ONE_TO_ONE' | 'GROUP'>('GROUP'); // 채팅방 타입 상태 추가
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const subscribedRef = useRef(false);
   const processedMessageIds = useRef<Set<number>>(new Set());
@@ -44,35 +45,45 @@ const ChatRoomPage: React.FC = () => {
         try {
           const participantData = await getRoomParticipants(parseInt(roomId));
           setParticipants(participantData);
-          console.log('Successfully loaded participants');
+          // 참여자 수로 채팅방 타입 구분 (2명이면 1:1 채팅)
+          setRoomType(participantData.length === 2 ? 'ONE_TO_ONE' : 'GROUP');
+          console.log('Successfully loaded participants, room type:', participantData.length === 2 ? 'ONE_TO_ONE' : 'GROUP');
         } catch (participantError) {
           console.warn('Failed to load participants:', participantError);
           // 빈 참여자 목록으로 설정
           setParticipants([]);
+          setRoomType('GROUP'); // 기본값으로 그룹 채팅 설정
         }
         
         // 3. 채팅 히스토리 로드 시도 (실패해도 계속 진행)
         try {
           setMessagesLoading(true);
+          console.log(`[ChatRoom] Loading chat history for room ID: ${roomId}`);
           const messageData = await getChatMessages(parseInt(roomId));
+          console.log(`[ChatRoom] Raw message data received:`, messageData);
+          
           // 메시지를 시간순으로 정렬 (오래된 것부터)
-          const sortedMessages = messageData.sort((a, b) => 
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
+          const sortedMessages = messageData.sort((a, b) => {
+            const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (a.sentAtEpochMs || 0);
+            const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (b.sentAtEpochMs || 0);
+            return timeA - timeB;
+          });
+          console.log(`[ChatRoom] Sorted messages:`, sortedMessages);
           setMessages(sortedMessages);
           console.log('Successfully loaded chat history:', sortedMessages.length, 'messages');
         } catch (historyError) {
-          console.warn('Failed to load chat history:', historyError);
-          // 빈 메시지 배열로 설정 (플레이스홀더 제거)
-          setMessages([]);
+          console.error('Failed to load chat history:', historyError);
+          console.error('Error details:', historyError);
+          // API 실패 시에도 기존 메시지 유지 (빈 배열로 초기화하지 않음)
+          console.log('Keeping existing messages due to API failure');
         } finally {
           setMessagesLoading(false);
         }
         
       } catch (error) {
         console.error('Unexpected error during room initialization:', error);
-        // 빈 메시지 배열로 설정
-        setMessages([]);
+        // 예상치 못한 오류 시에도 기존 메시지 유지
+        console.log('Keeping existing messages due to unexpected error');
       } finally {
         setLoading(false);
       }
@@ -92,15 +103,16 @@ const ChatRoomPage: React.FC = () => {
         console.log('WebSocket connected successfully');
         console.log('Socket connection status:', socketService.connected);
         
-        console.log('Subscribing to:', `/topic/chat/rooms/${roomId}`);
-        
-        // 기본 토픽만 구독 (서버 에러 방지)
-        const primaryTopic = `/topic/rooms/${roomId}`;
+        // 채팅방 타입에 따라 구독 경로 결정
+        const subscriptionPath = roomType === 'ONE_TO_ONE' 
+          ? `/queue/messages/${roomId}` 
+          : `/topic/rooms/${roomId}`;
+        console.log('Subscribing to:', subscriptionPath, 'for room type:', roomType);
         
         const subscriptions: any[] = [];
-        console.log('Subscribing to topic:', primaryTopic);
-        const sub = await socketService.subscribe(primaryTopic, (message) => {
-          console.log(`[CHAT] Message received on topic ${primaryTopic}:`, message);
+        console.log('Subscribing to topic:', subscriptionPath);
+        const sub = await socketService.subscribe(subscriptionPath, (message) => {
+          console.log(`[CHAT] Message received on topic ${subscriptionPath}:`, message);
           console.log('[CHAT] Message body:', message.body);
           console.log('[CHAT] Message headers:', message.headers);
           
@@ -182,22 +194,94 @@ const ChatRoomPage: React.FC = () => {
     };
   }, [roomId]);
 
+  // roomType이 변경될 때 WebSocket 구독 업데이트
+  useEffect(() => {
+    if (!roomId || !socketService.connected) return;
+
+    const updateSubscription = async () => {
+      try {
+        // 기존 구독 해제
+        if (subscribedRef.current) {
+          socketService.disconnect();
+          subscribedRef.current = false;
+        }
+
+        // 새로운 구독 설정
+        await socketService.connect();
+        const subscriptionPath = roomType === 'ONE_TO_ONE' 
+          ? `/queue/messages/${roomId}` 
+          : `/topic/rooms/${roomId}`;
+        
+        console.log('Updating subscription to:', subscriptionPath, 'for room type:', roomType);
+        
+        await socketService.subscribe(subscriptionPath, (message) => {
+          console.log(`[CHAT] Message received on topic ${subscriptionPath}:`, message);
+          
+          try {
+            const raw = JSON.parse(message.body);
+            const newMessage: ChatMessage = {
+              id: raw.id ?? Math.floor(Math.random() * 1e9),
+              content: raw.content ?? '',
+              createdAt: raw.createdAt ?? new Date().toISOString(),
+              sender: raw.sender ?? { id: 0, username: 'Unknown', fullName: 'Unknown' },
+              messageType: raw.messageType ?? 'TEXT',
+            };
+            
+            setMessages((prev) => {
+              if (processedMessageIds.current.has(newMessage.id)) {
+                return prev;
+              }
+              
+              const existingMessage = prev.find(msg => msg.id === newMessage.id);
+              if (existingMessage) {
+                return prev;
+              }
+              
+              const isDuplicate = prev.some(msg => 
+                msg.content === newMessage.content && 
+                msg.createdAt === newMessage.createdAt && 
+                msg.sender?.username === newMessage.sender?.username
+              );
+              
+              if (isDuplicate) {
+                return prev;
+              }
+              
+              processedMessageIds.current.add(newMessage.id);
+              return [...prev, newMessage];
+            });
+          } catch (e) {
+            console.error('Failed to parse message', e);
+          }
+        });
+        
+        subscribedRef.current = true;
+        console.log('WebSocket subscription updated successfully');
+      } catch (error) {
+        console.error('Failed to update WebSocket subscription:', error);
+      }
+    };
+
+    updateSubscription();
+  }, [roomType, roomId]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, messageType: 'TEXT' | 'IMAGE' | 'FILE' = 'TEXT') => {
     if (!roomId) {
       console.error('Room ID is missing');
       return;
     }
 
-    // 기본 메시지 형식
+    // 메시지 타입에 따른 형식
     const messageToSend = { 
       content, 
       roomId: parseInt(roomId),
       timestamp: new Date().toISOString(),
-      sender: user?.username || 'unknown'
+      sender: user?.username || 'unknown',
+      type: messageType
     };
     
     const endpoint = `/app/chat/rooms/${roomId}`;
@@ -223,8 +307,16 @@ const ChatRoomPage: React.FC = () => {
     }
   };
 
+  const handleExitChat = () => {
+    // 단순히 채팅 화면만 나가기 (방에서 완전히 나가지 않음)
+    window.location.href = '/';
+  };
+
   const handleLeaveRoom = async () => {
     if (!roomId) return;
+    
+    const confirmLeave = window.confirm('정말로 이 채팅방에서 나가시겠습니까? 나가면 다시 들어올 수 없습니다.');
+    if (!confirmLeave) return;
     
     try {
       setLoading(true);
@@ -287,9 +379,12 @@ const ChatRoomPage: React.FC = () => {
               {roomId?.charAt(0) || 'R'}
             </div>
             <div>
-              <h5 className="mb-0">Room #{roomId}</h5>
+              <h5 className="mb-0">
+                {roomType === 'ONE_TO_ONE' ? '1:1 채팅' : `Room #${roomId}`}
+              </h5>
               <small className="text-muted">
                 {participants.length}명 참여중
+                {roomType === 'ONE_TO_ONE' && ' (1:1 채팅)'}
               </small>
             </div>
           </div>
@@ -301,12 +396,21 @@ const ChatRoomPage: React.FC = () => {
               <i className="bi bi-three-dots-vertical"></i>
             </Button>
             <Button 
+              variant="outline-danger" 
+              size="sm" 
+              className="me-2"
+              onClick={handleLeaveRoom}
+              disabled={loading}
+              title="채팅방에서 완전히 나가기"
+            >
+              <i className="bi bi-trash"></i>
+            </Button>
+            <Button 
               variant="outline-secondary" 
               size="sm" 
-              disabled={loading}
-              onClick={handleLeaveRoom}
+              onClick={handleExitChat}
             >
-              {loading ? '나가는 중...' : '나가기'}
+              나가기
             </Button>
           </div>
         </div>
@@ -328,14 +432,37 @@ const ChatRoomPage: React.FC = () => {
           ) : (
             <div>
               {messages
-                .filter((msg) => msg && msg.sender && msg.content) // 유효한 메시지만 필터링
-                .map((msg) => (
-                  <MessageBubble
-                    key={msg.id}
-                    message={msg}
-                    isCurrentUser={msg.sender?.username === user?.username}
-                  />
-                ))}
+                .filter((msg) => {
+                  const isValid = msg && msg.content;
+                  if (!isValid) {
+                    console.log(`[ChatRoom] Filtered out invalid message:`, msg);
+                  }
+                  return isValid;
+                }) // 유효한 메시지만 필터링 (sender 필드가 없을 수 있으므로 제거)
+                .map((msg) => {
+                  console.log(`[ChatRoom] Rendering message:`, msg);
+                  
+                  // 서버 데이터를 프론트엔드 형식으로 변환
+                  const transformedMessage: ChatMessage = {
+                    id: msg.id || Math.floor(Math.random() * 1e9),
+                    content: msg.content,
+                    sender: msg.sender || { 
+                      id: 0, 
+                      username: 'Unknown', 
+                      fullName: 'Unknown User' 
+                    },
+                    messageType: msg.messageType || 'TEXT',
+                    createdAt: msg.createdAt || new Date(msg.sentAtEpochMs || Date.now()).toISOString()
+                  };
+                  
+                  return (
+                    <MessageBubble
+                      key={transformedMessage.id}
+                      message={transformedMessage}
+                      isCurrentUser={transformedMessage.sender?.id === user?.id}
+                    />
+                  );
+                })}
               <div ref={messagesEndRef} />
             </div>
           )}
