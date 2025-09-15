@@ -1,99 +1,101 @@
-import { useState } from 'react'
+// src/components/AssignmentReview.tsx
 
-import { useNavigate, useLocation } from 'react-router-dom'
-import Panel from '../Panel'
-import Button from '../Button'
+import { useNavigate, useParams } from 'react-router-dom';
 
-type Student = {
-  name: string
-  submitted: boolean
-  graded: boolean
-  time: string
-  content: string
-  files: string[]
-  memo: string
-}
+import { useEffect, useState } from 'react';
+import { getSubmissionsByAssignmentId, getAssignmentDetails } from '../../api';
+import Panel from '../panel';
+import type { Submission } from '../../types/assignment';
+
+
+// Submission 타입 정의에 studentName 추가
+export type SubmissionWithStudentName = Submission & {
+  studentName: string;
+};
 
 export default function AssignmentReview() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const gradedStudent = (location.state as { gradedName?: string })?.gradedName
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const assignmentId = id ? parseInt(id, 10) : null;
 
-  const [selected, setSelected] = useState('과제1')
-  const [students, setStudents] = useState<Student[]>([
-    { name: '김OO', submitted: true, graded: false, time: '2025-08-01 09:00', content: 'AI 윤리 보고서 본문입니다.', files: ['report.pdf'], memo: 'PDF 첨부' },
-    { name: '황가빈', submitted: true, graded: false, time: '2025-08-01 10:30', content: '모델 비교 결과 요약', files: [], memo: '' },
-    { name: '박OO', submitted: false, graded: false, time: '', content: '', files: [], memo: '' },
-  ])
+  const [assignmentTitle, setAssignmentTitle] = useState<string>('');
+  const [submissions, setSubmissions] = useState<SubmissionWithStudentName[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (gradedStudent) {
-    setStudents(prev =>
-      prev.map(s => (s.name === gradedStudent ? { ...s, graded: true } : s))
-    )
-    location.state = {}
+  useEffect(() => {
+    if (assignmentId === null || isNaN(assignmentId)) {
+      setError('유효하지 않은 과제 ID입니다.');
+      setLoading(false);
+      return;
+    }
+
+    const fetchDetailsAndSubmissions = async () => {
+      try {
+        setLoading(true);
+        // 과제 상세 정보를 가져와서 제목을 설정합니다.
+        const assignmentData = await getAssignmentDetails(assignmentId);
+        setAssignmentTitle(assignmentData.title);
+
+        // 제출물 목록을 가져옵니다.
+        const submissionsData = await getSubmissionsByAssignmentId(assignmentId);
+        setSubmissions(submissionsData.map(s => ({ ...s, studentName: `학생-${s.studentId}` } as SubmissionWithStudentName)));
+      } catch (err) {
+        console.error('데이터를 불러오는 데 실패했습니다.', err);
+        setError('과제 상세 정보 또는 제출물 목록을 불러오는 데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetailsAndSubmissions();
+  }, [assignmentId]);
+
+  const goGrade = (submission: Submission) => {
+    navigate(`/assignments/submissions/${submission.id}/grade`, {
+      state: { submission },
+    });
+  };
+
+  // 로딩 및 오류 처리
+  if (loading) {
+    return <div>로딩 중...</div>;
   }
 
-  const goGrade = (s: Student) => {
-    navigate('/grade', { state: { assignmentName: selected, student: s } })
+  if (error) {
+    return <div>오류: {error}</div>;
   }
 
   return (
-    <div className="row g-4 mt-4">
-      <div className="col-md-6">
-        <Panel title="과제 확인">
-          <div className="d-flex flex-column gap-2">
-            {['과제1','과제2','과제3'].map(name => (
-              <div
-                key={name}
-                className={`p-3 border rounded cursor-pointer ${selected===name ? 'bg-light' : ''}`}
-                onClick={()=>setSelected(name)}
-              >
-                {name} (제출 학생 - 25명 / 미제출 - 3명)
-              </div>
-            ))}
-          </div>
-        </Panel>
-      </div>
-
-      <div className="col-md-6">
-        <Panel title={`${selected} · 제출 현황`}>
-          <div className="d-flex flex-column gap-2">
-            {students.map((s, idx) => (
-              <div key={idx} className="card p-3">
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <div className="fw-semibold">{s.name}</div>
-                  <div
-                    className={`badge ${
-                      s.graded
-                        ? 'text-bg-dark'
-                        : s.submitted
-                        ? 'text-bg-success'
-                        : 'text-bg-danger'
-                    }`}
-                  >
-                    {s.graded ? '채점완료' : s.submitted ? '제출' : '미제출'}
+    <div className="d-flex justify-content-center">
+      <Panel title={` ${assignmentTitle || '과제'} · 제출 현황`}>
+        <div className="fs-6 space-y-2">
+          {submissions.length > 0 ? (
+            submissions.map((s) => (
+              <div key={s.id} className="border rounded p-2 d-flex flex-column gap-2">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div className="font-weight-bold">학생 ID: {s.studentId}</div>
+                  <div className={`text-sm ${s.grade !== undefined ? 'text-black font-weight-bold' : 'text-success'}`}>
+                    {s.grade !== undefined ? '채점완료' : '제출'}
                   </div>
                 </div>
 
-                {s.submitted && !s.graded && (
-                  <div className="d-flex flex-column gap-2 mt-2">
-                    <div className="d-flex justify-content-between">
-                      <span>제출일시</span><span>{s.time}</span>
-                    </div>
-                    <div className="d-flex justify-content-between">
-                      <span>요약</span>
-                      <span className="text-truncate" style={{ maxWidth: '260px' }}>{s.content}</span>
-                    </div>
-                    <div className="text-end mt-2">
-                      <Button size="sm" variant="outline" onClick={() => goGrade(s)}>채점하기</Button>
-                    </div>
+                {s.grade === undefined && (
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>제출일시: {new Date(s.submittedAt).toLocaleDateString()}</span>
+                    <button onClick={() => goGrade(s)}>
+                      채점하기
+                    </button>
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        </Panel>
-      </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-secondary">
+              제출된 과제가 없습니다.
+            </div>
+          )}
+        </div>
+      </Panel>
     </div>
-  )
+  );
 }

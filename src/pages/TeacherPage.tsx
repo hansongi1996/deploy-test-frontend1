@@ -35,7 +35,7 @@ const TeacherPage = () => {
         <div className="d-flex flex-column w-100" style={{ height: '100vh' }}>
             <Header />
             <header className=" px-10 py-2 d-flex justify-content-between align-items-center mb-4">
-                <h1 className="h4 fw-bold">교수 과제 관리 (TS)</h1>
+                <h1 className="h4 fw-bold">강사 과제 관리</h1>
                 <nav>
                     <ul className="nav nav-pills gap-2">
                         <li className="nav-item">

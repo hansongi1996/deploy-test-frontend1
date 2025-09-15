@@ -1,91 +1,103 @@
-import { Link, useNavigate } from 'react-router-dom'
-import Panel from '../Panel'
+// src/components/Dashboard.tsx
 
-type DashAssignment = {
-  id: number
-  title: string
-  due: string
-  desc: string
-}
+import { Link } from 'react-router-dom';
+import type { Assignment } from '../../types';
+
+import { useEffect, useState } from 'react';
+import { getAssignments } from '../../api';
+import Panel from '../panel';
 
 export default function Dashboard() {
-  const navigate = useNavigate()
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const list: DashAssignment[] = [
-    { id: 1, title: '1 과제 이름', due: '2025-08-09', desc: '과제 내용' },
-    { id: 2, title: '2 과제 이름', due: '2025-10-21', desc: '과제 내용' },
-    { id: 3, title: '3 과제 이름', due: '2025-11-15', desc: '과제 내용' },
-  ]
+  // 모든 과제 데이터 가져오기
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const assignmentsData = await getAssignments();
+        setAssignments(assignmentsData);
+      } catch (err) {
+        console.error('대시보드 데이터를 불러오는 데 실패했습니다.', err);
+        setError('대시보드 데이터를 불러오는 데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const goEdit = (a: DashAssignment) => {
-    navigate(`/assignments/${a.id}/edit`, {
-      state: {
-        assignment: {
-          id: a.id,
-          title: a.title,
-          due: a.due,
-          desc: a.desc,
-          targets: { a: false, b: false, c: false },
-        },
-      },
-    })
+    fetchData();
+  }, []);
+
+  // 로딩 및 오류 처리
+  if (loading) {
+    return <div>로딩 중...</div>;
+  }
+
+  if (error) {
+    return <div>오류: {error}</div>;
   }
 
   return (
-    <div className="container mt-4">
-      <div className="text-end mb-4">
-        <Link
-          to="/assignments/new"
-          className="btn btn-dark btn-sm"
-        >
-          과제생성
-        </Link>
-      </div>
-
-      <div className="row g-4">
-        <div className="col-md-6">
-          <Panel title="과제관리">
-            <div className="card">
-              <div className="card-header bg-light fw-semibold text-sm">과제 리스트</div>
-              <div className="card-body p-2">
-                <div className="d-flex flex-column gap-2">
-                  {list.map((row) => (
-                    <div key={row.id} className="d-flex align-items-center justify-content-between p-2 rounded border">
-                      <span>
-                        {row.title} (~{row.due.replaceAll('-', '.')})
-                      </span>
-                      <div className="d-flex gap-2">
-                        <button
-                          className="btn btn-outline-secondary btn-sm"
-                          onClick={() => goEdit(row)}
-                        >
-                          수정
-                        </button>
-                        <button className="btn btn-outline-danger btn-sm">삭제</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Panel>
+    <div className="d-flex justify-content-center">
+      <div className="my-4 w-75 p-3">
+        <div className="text-end">
+          <Link to="/assignments/new" className="btn btn-primary">
+            새 과제 등록
+          </Link>
         </div>
+        <h2 className="text-center mb-4">대시보드</h2>
+        <div className="row g-4">
+          <div className="col-md-6">
+            <Panel title="등록 과제 관리">
+              <div className="p-2 fs-6">
+                {assignments.length > 0 ? (
+                  assignments.map((row) => (
+                    <div
+                      key={row.id}
+                      className="d-flex justify-content-between align-items-center py-1 border-bottom"
+                    >
+                      <span>
+                        {row.title} (~{row.dueDate.replaceAll('-', '.')})
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-secondary py-2">
+                    등록된 과제가 없습니다.
+                  </div>
+                )}
+              </div>
+            </Panel>
+          </div>
 
-        <div className="col-md-6">
-          <Panel title="제출과제 확인">
-            <div className="card">
-              <div className="card-header bg-light fw-semibold text-sm">과제 확인</div>
-              <div className="card-body p-2">
-                <div className="d-flex flex-column gap-2">
-                  <div className="p-2 rounded border"><span>과제1 (제출 학생 - 25명 / 미제출 - 3명)</span></div>
-                  <div className="p-2 rounded border"><span>과제2 (제출 학생 - 20명 / 미제출 - 3명)</span></div>
-                  <div className="p-2 rounded border"><span>과제3 (제출 학생 - 0명 / 미제출 - 25명)</span></div>
+          <div className="col-md-6">
+            <Panel title="제출 과제 확인">
+              <div className="border rounded">
+                <div className="border-bottom p-2 bg-light fs-6">과제 확인</div>
+                <div className="p-2 fs-6">
+                  {assignments.length > 0 ? (
+                    assignments.map((assignment) => (
+                      <Link
+                        to={`/assignments/${assignment.id}/review`} // AssignmentReview 페이지로 이동
+                        key={assignment.id}
+                        className="d-flex justify-content-between align-items-center py-1 text-decoration-none text-dark border-bottom"
+                      >
+                        <span>{assignment.title}</span>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="text-center text-secondary py-2">
+                      확인할 과제가 없습니다.
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          </Panel>
+            </Panel>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

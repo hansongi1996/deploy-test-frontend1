@@ -11,6 +11,7 @@ import type {
   LoginResponse,
   User
 } from './types';
+import type { AssignmentCreateRequestDTO, AssignmentUpdateRequestDTO, GradeRequestDTO, Submission } from './types/assignment';
 
 // === 세션/로컬 저장소 모두에서 토큰을 읽어오기 (세션 우선) ===
 function getToken(): string | null {
@@ -112,9 +113,18 @@ export const getChatMessages = async (roomId: number): Promise<ChatMessage[]> =>
 };
 
 // Assignment API functions
+export const createAssignment = async (payload: AssignmentCreateRequestDTO) => {
+  const response = await api.post("/assignments", payload);
+  return response.headers.location; // 새로 생성된 과제의 URI를 반환
+};
+
 export const getAssignments = async (): Promise<Assignment[]> => {
   const response = await api.get('/assignments');
   return response.data;
+};
+
+export const updateAssignment = async (assignmentId: number, payload: AssignmentUpdateRequestDTO) => {
+  await api.patch(`/assignments/${assignmentId}`, payload);
 };
 
 export const getAssignment = async (assignmentId: number): Promise<Assignment> => {
@@ -123,6 +133,19 @@ export const getAssignment = async (assignmentId: number): Promise<Assignment> =
 };
 
 export const getAssignmentSubmissions = async (assignmentId: number): Promise<AssignmentSubmission[]> => {
+  const response = await api.get(`/assignments/${assignmentId}/submissions`);
+  return response.data;
+};
+export const getAssignmentDetails = async (
+  assignmentId: number,
+): Promise<Assignment> => {
+  const response = await api.get(`/assignments/${assignmentId}`);
+  return response.data;
+};
+
+export const getSubmissionsByAssignmentId = async (
+  assignmentId: number,
+): Promise<Submission[]> => {
   const response = await api.get(`/assignments/${assignmentId}/submissions`);
   return response.data;
 };
@@ -140,6 +163,15 @@ export const submitAssignment = async (
   });
   return response.data;
 };
+export const gradeSubmission = async (
+  submissionId: number,
+  payload: GradeRequestDTO
+) => await api.patch(`/submissions/${submissionId}`, payload);
+
+export const deleteAssignment = async (assignmentId: number): Promise<void> => {
+  await api.delete(`/assignments/${assignmentId}`);
+};
+
 
 export const uploadFile = async (file: File): Promise<{ fileUrl: string }> => {
   const formData = new FormData();

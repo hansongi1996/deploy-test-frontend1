@@ -1,78 +1,106 @@
-import { useLocation, useNavigate } from 'react-router-dom'
-import Panel from '../Panel'
-import Button from '../Button'
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import Panel from "../panel";
+import { gradeSubmission } from "../../api";
+import Button from "../Button";
+import type { Submission } from "../../types/assignment";
 
+// AssignmentReview에서 전달받는 state 타입
 type GradeState = {
-  assignmentName: string
-  student: {
-    name: string
-    time: string
-    content: string
-    files: string[]
-  }
-}
+  submission: Submission;
+};
 
 export default function GradePage() {
-  const navigate = useNavigate()
-  const { state } = useLocation() as { state?: GradeState }
+  const navigate = useNavigate();
+  const { state } = useLocation() as { state?: GradeState };
 
-  const student = state?.student
-  const assignmentName = state?.assignmentName ?? '과제'
+  const submission = state?.submission;
+
+  const [grade, setGrade] = useState<number | undefined>(submission?.grade ?? undefined);
+
+  // 제출물 데이터가 없으면 뒤로 이동
+  useEffect(() => {
+    if (!submission) {
+      alert('유효한 제출물 정보가 없습니다. 이전 페이지로 돌아갑니다.');
+      navigate(-1);
+    }
+  }, [submission, navigate]);
+
+  const handleSubmitGrade = async () => {
+    if (!submission || grade === undefined) {
+      alert('채점할 점수를 입력하세요.');
+      return;
+    }
+
+    try {
+      await gradeSubmission(submission.id, { grade });
+      alert('채점이 성공적으로 완료되었습니다.');
+      navigate(-1); // 이전 페이지(과제 제출 현황)로 돌아감
+    } catch (error) {
+      console.error('채점 중 오류가 발생했습니다:', error);
+      alert('채점 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+  };
 
   return (
     <Panel title="과제채점">
-      <div className="d-flex flex-column gap-4">
-        <div className="h4 fw-semibold">{student?.name ?? '학생'}</div>
+      <div className="space-y-4 text-sm">
+        {/* 제출 정보 */}
+        <div className="border rounded p-3 space-y-3 bg-gray-100">
+          <div className="font-semibold">제출일시</div>
+          {/* submittedAt 필드 사용 */}
+          <div>{submission?.submittedAt ? new Date(submission.submittedAt).toLocaleString() : '-'}</div>
 
-        <div className="card p-3 bg-light">
-          <div className="fw-semibold">제출일시</div>
-          <div>{student?.time || '-'}</div>
-
-          <div className="fw-semibold mt-3">과제 내용</div>
-          <div style={{ whiteSpace: 'pre-wrap' }}>{student?.content || '-'}</div>
-
-          <div className="fw-semibold mt-3">첨부파일</div>
-          {student && student.files && student.files.length > 0 ? (
-            <ul className="list-unstyled">
-              {student.files.map((f, i) => (
-                <li key={i}>
-                  <a
-                    className="text-decoration-underline"
-                    href={`/download/${encodeURIComponent(f)}`}
-                    download
-                  >
-                    {f}
-                  </a>
-                </li>
-              ))}
-            </ul>
+          {/* SubmissionType에 따라 내용 표시 */}
+          {submission?.submissionType === 'LINK' ? (
+            <>
+              <div className="font-semibold">제출 링크</div>
+              <div>
+                <a href={submission.linkUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">
+                  {submission.linkUrl}
+                </a>
+              </div>
+            </>
           ) : (
-            <div className="text-secondary">첨부된 파일이 없습니다.</div>
+            <>
+              <div className="font-semibold">첨부파일</div>
+              {/* 백엔드 API 명세에 따라 실제 파일 다운로드 URL로 교체 필요 */}
+              {submission?.fileUrl ? (
+                <a
+                  className="underline"
+                  href={submission.fileUrl}
+                  download
+                >
+                  {submission.fileUrl}
+                </a>
+              ) : (
+                <div className="text-gray-500">첨부된 파일이 없습니다.</div>
+              )}
+            </>
           )}
         </div>
 
-        <div className="card p-3">
-          <div className="fw-semibold">교수 확인란</div>
-          <div className="d-flex align-items-center gap-3 mt-3">
-            <div className="form-check">
-              <input className="form-check-input" type="checkbox" id="passFail" />
-              <label className="form-check-label" htmlFor="passFail">P/F</label>
-            </div>
-            <div className="form-check">
-              <input className="form-check-input" type="checkbox" id="score" defaultChecked />
-              <label className="form-check-label" htmlFor="score">점수</label>
-            </div>
-          </div>
-          <div className="mt-3">점수설정 (1~100점)</div>
-          <input type="number" min={1} max={100} className="form-control mt-2" placeholder="예: 95" style={{ width: '160px' }} />
-          <div className="mt-3">메모 (학생에게 공개되지 않습니다)</div>
-          <textarea className="form-control mt-2" placeholder={`${assignmentName} 메모`} style={{ minHeight: '100px' }} />
-          <div className="text-end mt-3">
-            <Button variant="outline" onClick={() => navigate(-1)}>이전</Button>
-            <Button onClick={() => { alert('채점 완료! (나중에 API 연결)'); navigate(-1); }}>채점하기</Button>
+        {/* 교수 확인란 */}
+        <div className="border rounded p-3 space-y-3">
+          <div className="font-semibold">교수 확인란</div>
+          <div>점수 설정 (1~100점)</div>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            className="border rounded p-2 w-40"
+            placeholder="예: 95"
+            value={grade ?? ''}
+            onChange={(e) => setGrade(parseInt(e.target.value) || undefined)}
+          />
+          <div className="text-right space-x-2">
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              이전
+            </Button>
+            <Button onClick={handleSubmitGrade}>채점하기</Button>
           </div>
         </div>
       </div>
     </Panel>
-  )
+  );
 }
