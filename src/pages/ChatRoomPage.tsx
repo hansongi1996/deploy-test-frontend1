@@ -133,10 +133,9 @@ const ChatRoomPage: React.FC = () => {
         console.log('[ChatRoom] Socket connection status:', socketService.connected);
         console.log('[ChatRoom] Current room type:', roomType);
         
-        // 채팅방 타입에 따라 구독 경로 결정
-        const subscriptionPath = roomType === 'ONE_TO_ONE' 
-          ? `/topic/messages/${roomId}` 
-          : `/topic/rooms/${roomId}`;
+        // 채팅방 타입에 따라 구독 경로 결정 (백엔드와 일치)
+        // 백엔드에서 1대1 채팅도 broadcastMessage로 전송하므로 동일한 경로 사용
+        const subscriptionPath = `/topic/rooms/${roomId}`;
         console.log('Subscribing to:', subscriptionPath, 'for room type:', roomType);
         
         const subscriptions: any[] = [];
@@ -147,6 +146,8 @@ const ChatRoomPage: React.FC = () => {
           console.log('[CHAT] Message headers:', message.headers);
           console.log('[CHAT] Room type:', roomType);
           console.log('[CHAT] Room ID:', roomId);
+          console.log('[CHAT] Current subscription path:', subscriptionPath);
+          console.log('[CHAT] Socket connected:', socketService.connected);
           
           try {
             const raw = JSON.parse(message.body);
@@ -194,6 +195,14 @@ const ChatRoomPage: React.FC = () => {
               
               const updated = [...prev, newMessage];
               console.log('[CHAT] Message added successfully:', newMessage.id);
+              
+              // 마지막 메시지 시간을 localStorage에 저장 (HomePage에서 사용)
+              const roomLastMessageTimes = JSON.parse(localStorage.getItem('roomLastMessageTimes') || '{}');
+              if (roomId) {
+                roomLastMessageTimes[parseInt(roomId)] = newMessage.createdAt;
+                localStorage.setItem('roomLastMessageTimes', JSON.stringify(roomLastMessageTimes));
+              }
+              
               return updated;
             });
           } catch (e) {
@@ -224,78 +233,7 @@ const ChatRoomPage: React.FC = () => {
       // Note: 자동으로 leave API를 호출하지 않음
       // 사용자가 명시적으로 "Leave Room" 버튼을 클릭할 때만 호출
     };
-  }, [roomId]);
-
-  // roomType이 변경될 때 WebSocket 구독 업데이트
-  useEffect(() => {
-    if (!roomId || !socketService.connected) return;
-
-    const updateSubscription = async () => {
-      try {
-        // 기존 구독 해제
-        if (subscribedRef.current) {
-          socketService.disconnect();
-          subscribedRef.current = false;
-        }
-
-        // 새로운 구독 설정
-        await socketService.connect();
-        const subscriptionPath = roomType === 'ONE_TO_ONE' 
-          ? `/topic/messages/${roomId}` 
-          : `/topic/rooms/${roomId}`;
-        
-        console.log('Updating subscription to:', subscriptionPath, 'for room type:', roomType);
-        
-        await socketService.subscribe(subscriptionPath, (message) => {
-          console.log(`[CHAT] Message received on topic ${subscriptionPath}:`, message);
-          
-          try {
-            const raw = JSON.parse(message.body);
-            const newMessage: ChatMessage = {
-              id: raw.id ?? Math.floor(Math.random() * 1e9),
-              content: raw.content ?? '',
-              createdAt: raw.createdAt ?? new Date().toISOString(),
-              sender: raw.sender ?? { id: 0, username: 'Unknown', fullName: 'Unknown' },
-              messageType: raw.messageType ?? 'TEXT',
-            };
-            
-            setMessages((prev) => {
-              if (processedMessageIds.current.has(newMessage.id)) {
-                return prev;
-              }
-              
-              const existingMessage = prev.find(msg => msg.id === newMessage.id);
-              if (existingMessage) {
-                return prev;
-              }
-              
-              const isDuplicate = prev.some(msg => 
-                msg.content === newMessage.content && 
-                msg.createdAt === newMessage.createdAt && 
-                msg.sender?.username === newMessage.sender?.username
-              );
-              
-              if (isDuplicate) {
-                return prev;
-              }
-              
-              processedMessageIds.current.add(newMessage.id);
-              return [...prev, newMessage];
-            });
-          } catch (e) {
-            console.error('Failed to parse message', e);
-          }
-        });
-        
-        subscribedRef.current = true;
-        console.log('WebSocket subscription updated successfully');
-      } catch (error) {
-        console.error('Failed to update WebSocket subscription:', error);
-      }
-    };
-
-    updateSubscription();
-  }, [roomType, roomId]);
+  }, [roomId, roomType]); // roomType도 의존성에 추가하여 통합
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -307,23 +245,26 @@ const ChatRoomPage: React.FC = () => {
       return;
     }
 
-    // 메시지 타입에 따른 형식
+    // 메시지 타입에 따른 형식 (백엔드 SendMessageRequestDTO와 일치)
     const messageToSend: any = { 
       content, 
-      roomId: parseInt(roomId),
-      timestamp: new Date().toISOString(),
-      sender: user?.username || 'unknown',
+      roomId: roomId, // String 타입으로 전송 (백엔드에서 String으로 받음)
       type: messageType
     };
     
-    // 1:1 채팅인 경우 상대방 이메일 추가
+    // 1:1 채팅인 경우 상대방 정보 추가
     if (roomType === 'ONE_TO_ONE' && participants.length >= 2) {
       const receiver = participants.find(p => p.id !== user?.id);
-      if (receiver && receiver.email) {
+      console.log('[ChatRoom] 1:1 chat - participants:', participants);
+      console.log('[ChatRoom] 1:1 chat - current user:', user);
+      console.log('[ChatRoom] 1:1 chat - receiver found:', receiver);
+      
+      if (receiver) {
+        // 백엔드 getById는 실제로 findByEmail을 사용하므로 이메일 전송
         messageToSend.receiverId = receiver.email;
         console.log('[ChatRoom] 1:1 chat - adding receiverId (email):', receiver.email);
       } else {
-        console.warn('[ChatRoom] 1:1 chat - receiver email not found');
+        console.warn('[ChatRoom] 1:1 chat - receiver not found');
       }
     }
     
@@ -336,6 +277,7 @@ const ChatRoomPage: React.FC = () => {
     console.log('[ChatRoom] Room ID:', roomId);
     console.log('[ChatRoom] Participants:', participants);
     console.log('[ChatRoom] Room type:', roomType);
+    console.log('[ChatRoom] Message structure:', JSON.stringify(messageToSend, null, 2));
     
     // 메시지 전송 전에 즉시 로컬에 추가 (실시간 렌더링을 위해)
     const tempMessage: ChatMessage = {
@@ -349,6 +291,11 @@ const ChatRoomPage: React.FC = () => {
     // 즉시 UI에 메시지 추가
     setMessages(prev => [...prev, tempMessage]);
     console.log('✅ Message added to UI immediately');
+    
+    // 마지막 메시지 시간을 localStorage에 저장 (HomePage에서 사용)
+    const roomLastMessageTimes = JSON.parse(localStorage.getItem('roomLastMessageTimes') || '{}');
+    roomLastMessageTimes[parseInt(roomId)] = new Date().toISOString();
+    localStorage.setItem('roomLastMessageTimes', JSON.stringify(roomLastMessageTimes));
     
     try {
       await socketService.publish(endpoint, messageToSend);

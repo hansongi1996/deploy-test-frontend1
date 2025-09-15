@@ -67,12 +67,6 @@ export const getChatRooms = async (): Promise<ChatRoom[]> => {
   return response.data;
 };
 
-// Get individual chat room info
-export const getChatRoom = async (roomId: number): Promise<ChatRoom> => {
-  const response = await api.get(`/chatrooms/${roomId}`);
-  return response.data;
-};
-
 export const createChatRoom = async (roomName: string, type: ChatRoomType = 'GROUP', targetUser?: User): Promise<ChatRoom> => {
   const requestData: any = { roomName, type };
   
@@ -173,12 +167,12 @@ export const getNotice = async (noticeId: number): Promise<Notice> => {
 export const createNotice = async (
   title: string,
   content: string,
-  isImportant: boolean = false
+  pinned: boolean = false
 ): Promise<Notice> => {
   const response = await api.post('/announcements', {
     title,
     content,
-    isImportant
+    pinned
   });
   return response.data;
 };
@@ -187,12 +181,12 @@ export const updateNotice = async (
   noticeId: number,
   title: string,
   content: string,
-  isImportant: boolean = false
+  pinned: boolean = false
 ): Promise<Notice> => {
   const response = await api.put(`/announcements/${noticeId}`, {
     title,
     content,
-    isImportant
+    pinned
   });
   return response.data;
 };

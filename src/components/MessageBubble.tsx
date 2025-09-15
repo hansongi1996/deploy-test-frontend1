@@ -7,13 +7,59 @@ interface MessageBubbleProps {
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isCurrentUser }) => {
+  // 디버깅을 위한 메시지 데이터 로그
+  console.log('[MessageBubble] Rendering message:', {
+    id: message.id,
+    content: message.content,
+    createdAt: message.createdAt,
+    sentAtEpochMs: message.sentAtEpochMs,
+    sender: message.sender
+  });
+
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('ko-KR', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
+    try {
+      const date = new Date(dateString);
+      
+      // 유효하지 않은 날짜인지 확인
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date string:', dateString);
+        return '시간 정보 없음';
+      }
+      
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      // 1분 이내
+      if (diffMinutes < 1) {
+        return '방금 전';
+      }
+      // 1시간 이내
+      else if (diffMinutes < 60) {
+        return `${diffMinutes}분 전`;
+      }
+      // 24시간 이내
+      else if (diffHours < 24) {
+        return `${diffHours}시간 전`;
+      }
+      // 7일 이내
+      else if (diffDays < 7) {
+        return `${diffDays}일 전`;
+      }
+      // 그 외에는 정확한 시간 표시
+      else {
+        return date.toLocaleTimeString('ko-KR', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        });
+      }
+    } catch (error) {
+      console.error('Error formatting time:', error, 'Input:', dateString);
+      return '시간 정보 없음';
+    }
   };
 
   return (

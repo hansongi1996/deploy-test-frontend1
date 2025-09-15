@@ -19,7 +19,7 @@ const NoticePage: React.FC = () => {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    isImportant: false
+    pinned: false
   });
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -136,7 +136,7 @@ const NoticePage: React.FC = () => {
     setFormData({
       title: notice.title,
       content: notice.content,
-      isImportant: notice.isImportant
+      pinned: notice.pinned
     });
     setIsEditing(true);
     setShowCreateModal(true);
@@ -147,7 +147,7 @@ const NoticePage: React.FC = () => {
     setFormData({
       title: '',
       content: '',
-      isImportant: false
+      pinned: false
     });
     setIsEditing(false);
     setShowCreateModal(true);
@@ -162,13 +162,13 @@ const NoticePage: React.FC = () => {
           selectedNotice.id,
           formData.title,
           formData.content,
-          formData.isImportant
+          formData.pinned
         );
       } else {
         await createNotice(
           formData.title,
           formData.content,
-          formData.isImportant
+          formData.pinned
         );
       }
       
@@ -217,7 +217,7 @@ const NoticePage: React.FC = () => {
       
       <div className="d-flex flex-grow-1">
         {/* Left Panel - Navigation Sidebar (Fixed) */}
-        <div className="bg-light border-end d-flex flex-column" style={{ position: 'fixed', width: '280px', height: 'calc(100vh - 80px)', left: 0, top: '80px', zIndex: 1000 }}>
+        <div className="bg-light border-end d-flex flex-column" style={{ position: 'fixed', width: '280px', height: 'calc(100vh - 80px)', left: 0, top: '80px', zIndex: 1000, overflow: 'hidden' }}>
           {/* Main Navigation Tabs */}
           <div className="d-flex border-bottom">
             <Button 
@@ -244,7 +244,7 @@ const NoticePage: React.FC = () => {
           </div>
 
           {/* Notice Statistics */}
-          <div className="p-3">
+          <div className="p-3" style={{ overflowY: 'auto', flex: 1 }}>
             <Card className="mb-3">
               <Card.Header className="bg-light py-2">
                 <h6 className="mb-0">공지사항 현황</h6>
@@ -256,11 +256,11 @@ const NoticePage: React.FC = () => {
                 </div>
                 <div className="d-flex justify-content-between mb-2">
                   <span className="small">중요</span>
-                  <Badge bg="danger" className="small">{notices.filter(n => n.isImportant).length}</Badge>
+                  <Badge bg="danger" className="small">{notices.filter(n => n.pinned).length}</Badge>
                 </div>
                 <div className="d-flex justify-content-between">
                   <span className="small">일반</span>
-                  <Badge bg="secondary" className="small">{notices.filter(n => !n.isImportant).length}</Badge>
+                  <Badge bg="secondary" className="small">{notices.filter(n => !n.pinned).length}</Badge>
                 </div>
               </Card.Body>
             </Card>
@@ -288,7 +288,7 @@ const NoticePage: React.FC = () => {
                             <h6 className="mb-0 small text-truncate" style={{ maxWidth: '150px' }}>
                               {notice.title}
                             </h6>
-                            {notice.isImportant && (
+                            {notice.pinned && (
                               <Badge bg="danger" className="small">!</Badge>
                             )}
                           </div>
@@ -356,10 +356,10 @@ const NoticePage: React.FC = () => {
             <div key={notice.id} className="col-md-8 mb-3">
               <Card className="h-100">
                 <Card.Header className={`d-flex justify-content-between align-items-center ${
-                  notice.isImportant ? 'bg-danger text-white' : 'bg-light'
+                  notice.pinned ? 'bg-danger text-white' : 'bg-light'
                 }`}>
                   <div className="d-flex align-items-center">
-                    {notice.isImportant && (
+                    {notice.pinned && (
                       <Badge bg="warning" className="me-2">중요</Badge>
                     )}
                     <h5 className="mb-0">{notice.title}</h5>
@@ -482,7 +482,7 @@ const NoticePage: React.FC = () => {
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {selectedNotice?.isImportant && (
+            {selectedNotice?.pinned && (
               <Badge bg="warning" className="me-2">중요</Badge>
             )}
             {selectedNotice?.title}
@@ -544,8 +544,8 @@ const NoticePage: React.FC = () => {
               <Form.Check
                 type="checkbox"
                 label="중요 공지사항"
-                checked={formData.isImportant}
-                onChange={(e) => setFormData({ ...formData, isImportant: e.target.checked })}
+                checked={formData.pinned}
+                onChange={(e) => setFormData({ ...formData, pinned: e.target.checked })}
               />
             </Form.Group>
           </Form>

@@ -45,6 +45,7 @@ export interface ChatRoom {
   unreadCount?: number;
   date?: string;
   createdAt?: string;
+  lastMessageTime?: string;
 }
 
 export interface ChatRoomParticipant {
@@ -97,7 +98,7 @@ export interface Notice {
   title: string;
   content: string;
   author: User;
-  isImportant: boolean;
+  pinned: boolean;
   createdAt: string;
   updatedAt: string;
 }

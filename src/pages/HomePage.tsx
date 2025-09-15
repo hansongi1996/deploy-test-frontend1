@@ -17,6 +17,7 @@ const HomePage: React.FC = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [showUserSelectionModal, setShowUserSelectionModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [roomLastMessageTimes, setRoomLastMessageTimes] = useState<Record<number, string>>({});
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -40,7 +41,26 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     loadRooms();
+    
+    // localStorage에서 마지막 메시지 시간 복원
+    const savedTimes = localStorage.getItem('roomLastMessageTimes');
+    if (savedTimes) {
+      try {
+        const parsedTimes = JSON.parse(savedTimes);
+        setRoomLastMessageTimes(parsedTimes);
+        console.log('[HomePage] Loaded roomLastMessageTimes from localStorage:', parsedTimes);
+      } catch (error) {
+        console.warn('Failed to parse saved message times:', error);
+      }
+    } else {
+      console.log('[HomePage] No roomLastMessageTimes found in localStorage');
+    }
   }, []);
+
+  // 마지막 메시지 시간이 변경될 때마다 localStorage에 저장
+  useEffect(() => {
+    localStorage.setItem('roomLastMessageTimes', JSON.stringify(roomLastMessageTimes));
+  }, [roomLastMessageTimes]);
 
   const loadRooms = async () => {
     try {
@@ -55,10 +75,19 @@ const HomePage: React.FC = () => {
       }
       
       const data = await getChatRooms();
-      console.log('Raw chat rooms data:', data);
-      console.log('First room data:', data[0]);
       setRooms(data);
       console.log('Successfully loaded chat rooms:', data.length);
+      console.log('Full API response data:', data);
+      console.log('Chat rooms data summary:', data.map(room => ({
+        id: room.id,
+        roomName: room.roomName,
+        type: room.type,
+        lastMessageTime: room.lastMessageTime,
+        createdAt: room.createdAt,
+        date: room.date,
+        unreadCount: room.unreadCount,
+        participantCount: room.participantCount
+      })));
     } catch (error: any) {
       console.error('Failed to load rooms:', error);
       
@@ -170,6 +199,14 @@ const HomePage: React.FC = () => {
     setShowUserSelectionModal(false);
   };
 
+  // 마지막 메시지 시간 업데이트 함수
+  const updateRoomLastMessageTime = (roomId: number, messageTime: string) => {
+    setRoomLastMessageTimes(prev => ({
+      ...prev,
+      [roomId]: messageTime
+    }));
+  };
+
   const handleRoomTypeChange = (type: ChatRoomType) => {
     setNewRoomType(type);
     // 채팅방 타입이 변경되면 선택된 사용자 초기화
@@ -262,77 +299,293 @@ const HomePage: React.FC = () => {
             <>
               <div className="flex-grow-1 overflow-auto" style={{ maxHeight: '600px' }}>
                 {filteredRooms.length > 0 ? (
-                  filteredRooms.map((room: ChatRoom, index: number) => (
-                    <div
-                      key={`${room.id}-${index}`}
-                      className="d-flex align-items-center p-3 border-bottom hover-bg-light"
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div 
-                        className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
-                        style={{ width: '50px', height: '50px', fontSize: '18px' }}
-                        onClick={() => handleJoinRoom(room.id)}
-                      >
-                        {room.roomName.charAt(0)}
-                      </div>
-                      <div 
-                        className="flex-grow-1"
-                        onClick={() => handleJoinRoom(room.id)}
-                      >
-                        <div className="d-flex justify-content-between align-items-center">
-                          <h6 className="mb-1">{room.roomName}</h6>
-                          <small className="text-muted">
-                            {(() => {
-                              const dateStr = room.date || room.createdAt;
-                              if (!dateStr) return '시간 없음';
-                              
-                              try {
-                                // 한국어 시간 형식 처리 (예: "오후 2:20")
-                                if (typeof dateStr === 'string' && dateStr.includes('오후') || dateStr.includes('오전')) {
-                                  console.log('Korean time format detected:', dateStr);
-                                  return dateStr; // 이미 한국어 형식이면 그대로 반환
-                                }
-                                
-                                const date = new Date(dateStr);
-                                if (isNaN(date.getTime())) {
-                                  console.warn('Invalid date string:', dateStr);
-                                  return '시간 없음';
-                                }
-                                return date.toLocaleTimeString('ko-KR', { 
-                                  hour: 'numeric', 
-                                  minute: '2-digit',
-                                  hour12: true 
-                                });
-                              } catch (error) {
-                                console.error('Date parsing error:', error, 'for date:', dateStr);
-                                return '시간 없음';
-                              }
-                            })()}
-                          </small>
+                  <>
+                    {/* 그룹 채팅 섹션 */}
+                    {filteredRooms.filter(room => room.type === 'GROUP').length > 0 && (
+                      <>
+                        <div className="px-3 py-2 bg-light border-bottom">
+                          <h6 className="mb-0 text-muted small">
+                            <i className="bi bi-people me-1"></i>
+                            그룹 채팅 ({filteredRooms.filter(room => room.type === 'GROUP').length})
+                          </h6>
                         </div>
-                        <p className="mb-0 text-muted small">
-                          {room.participantCount || 0}명 • {room.type === 'ONE_TO_ONE' ? '1:1 채팅' : '그룹 채팅'}
-                        </p>
-                      </div>
-                      <div className="d-flex align-items-center gap-2">
-                        {room.unreadCount && room.unreadCount > 0 && (
-                          <span className="badge bg-success rounded-pill">{room.unreadCount}</span>
-                        )}
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="p-1 text-danger"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleLeaveRoom(room.id, room.roomName);
-                          }}
-                          disabled={loading}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+                        {filteredRooms
+                          .filter(room => room.type === 'GROUP')
+                          .map((room: ChatRoom, index: number) => (
+                            <div
+                              key={`group-${room.id}-${index}`}
+                              className="d-flex align-items-center p-3 border-bottom hover-bg-light"
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <div 
+                                className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                                style={{ width: '50px', height: '50px', fontSize: '18px' }}
+                                onClick={() => handleJoinRoom(room.id)}
+                              >
+                                {room.roomName.charAt(0)}
+                              </div>
+                              <div 
+                                className="flex-grow-1"
+                                onClick={() => handleJoinRoom(room.id)}
+                              >
+                                <div className="d-flex justify-content-between align-items-center">
+                                  <h6 className="mb-1">{room.roomName}</h6>
+                                  <small className="text-muted">
+                                    {(() => {
+                                      // 서버에서 제공하는 시간 정보 우선 사용
+                                      let timeToShow = room.lastMessageTime || room.date || room.createdAt || roomLastMessageTimes[room.id];
+                                      
+                                      // 디버깅을 위한 로그
+                                      console.log(`[HomePage] Room ${room.id} (${room.roomName}) time info:`, {
+                                        serverLastMessageTime: room.lastMessageTime,
+                                        serverDate: room.date,
+                                        serverCreatedAt: room.createdAt,
+                                        localStorageTime: roomLastMessageTimes[room.id],
+                                        finalTimeToShow: timeToShow,
+                                        source: room.lastMessageTime ? 'server lastMessageTime' : 
+                                               room.date ? 'server date' : 
+                                               room.createdAt ? 'server createdAt' : 
+                                               'localStorage'
+                                      });
+                                      
+                                      if (!timeToShow) {
+                                        // 모든 시간 정보가 없으면 현재 시간 사용
+                                        timeToShow = new Date().toISOString();
+                                      }
+                                      
+                                      try {
+                                        let date: Date;
+                                        
+                                        // 한국어 시간 형식 처리 ("오후 4:44", "오전 9:30" 등)
+                                        if (timeToShow.includes('오후') || timeToShow.includes('오전')) {
+                                          // 한국어 시간 형식을 현재 날짜와 결합
+                                          const today = new Date();
+                                          const timeStr = timeToShow.replace('오후', '').replace('오전', '').trim();
+                                          const [hour, minute] = timeStr.split(':').map(Number);
+                                          
+                                          date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                                          if (timeToShow.includes('오후') && hour !== 12) {
+                                            date.setHours(hour + 12);
+                                          } else if (timeToShow.includes('오전') && hour === 12) {
+                                            date.setHours(0);
+                                          } else {
+                                            date.setHours(hour);
+                                          }
+                                          date.setMinutes(minute);
+                                        } else {
+                                          // 일반적인 날짜 형식
+                                          date = new Date(timeToShow);
+                                        }
+                                        
+                                        if (isNaN(date.getTime())) {
+                                          console.warn(`[HomePage] Invalid date for room ${room.id}:`, timeToShow);
+                                          return '시간 정보 없음';
+                                        }
+                                        
+                                        const now = new Date();
+                                        const diffMs = now.getTime() - date.getTime();
+                                        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                                        
+                                        console.log(`[HomePage] Time calculation for room ${room.id}:`, {
+                                          messageTime: date.toISOString(),
+                                          currentTime: now.toISOString(),
+                                          diffMs,
+                                          diffMinutes,
+                                          diffHours,
+                                          diffDays
+                                        });
+                                        
+                                        // 미래 시간인 경우 처리
+                                        if (diffMs < 0) {
+                                          console.warn(`[HomePage] Future time detected for room ${room.id}:`, date.toISOString());
+                                          return '시간 정보 오류';
+                                        }
+                                        
+                                        // 상대적 시간 표시
+                                        if (diffMinutes < 1) return '방금 전';
+                                        if (diffMinutes < 60) return `${diffMinutes}분 전`;
+                                        if (diffHours < 24) return `${diffHours}시간 전`;
+                                        if (diffDays < 7) return `${diffDays}일 전`;
+                                        
+                                        // 그 외에는 정확한 시간
+                                        return date.toLocaleTimeString('ko-KR', { 
+                                          hour: 'numeric', 
+                                          minute: '2-digit',
+                                          hour12: true 
+                                        });
+                                      } catch (error) {
+                                        console.error('Error formatting time:', error, 'Input:', timeToShow);
+                                        return '시간 정보 없음';
+                                      }
+                                    })()}
+                                  </small>
+                                </div>
+                                <p className="mb-0 text-muted small">그룹 채팅</p>
+                              </div>
+                              <div className="d-flex align-items-center gap-2">
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="p-1 text-danger"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleLeaveRoom(room.id, room.roomName);
+                                  }}
+                                  disabled={loading}
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                      </>
+                    )}
+
+                    {/* 1:1 채팅 섹션 */}
+                    {filteredRooms.filter(room => room.type === 'ONE_TO_ONE').length > 0 && (
+                      <>
+                        <div className="px-3 py-2 bg-light border-bottom">
+                          <h6 className="mb-0 text-muted small">
+                            <i className="bi bi-person me-1"></i>
+                            1:1 채팅 ({filteredRooms.filter(room => room.type === 'ONE_TO_ONE').length})
+                          </h6>
+                        </div>
+                        {filteredRooms
+                          .filter(room => room.type === 'ONE_TO_ONE')
+                          .map((room: ChatRoom, index: number) => (
+                            <div
+                              key={`one-to-one-${room.id}-${index}`}
+                              className="d-flex align-items-center p-3 border-bottom hover-bg-light"
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <div 
+                                className="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-3" 
+                                style={{ width: '50px', height: '50px', fontSize: '18px' }}
+                                onClick={() => handleJoinRoom(room.id)}
+                              >
+                                {room.roomName.charAt(0)}
+                              </div>
+                              <div 
+                                className="flex-grow-1"
+                                onClick={() => handleJoinRoom(room.id)}
+                              >
+                                <div className="d-flex justify-content-between align-items-center">
+                                  <h6 className="mb-1">{room.roomName}</h6>
+                                  <small className="text-muted">
+                                    {(() => {
+                                      // 서버에서 제공하는 시간 정보 우선 사용
+                                      let timeToShow = room.lastMessageTime || room.date || room.createdAt || roomLastMessageTimes[room.id];
+                                      
+                                      // 디버깅을 위한 로그
+                                      console.log(`[HomePage] Room ${room.id} (${room.roomName}) time info:`, {
+                                        serverLastMessageTime: room.lastMessageTime,
+                                        serverDate: room.date,
+                                        serverCreatedAt: room.createdAt,
+                                        localStorageTime: roomLastMessageTimes[room.id],
+                                        finalTimeToShow: timeToShow,
+                                        source: room.lastMessageTime ? 'server lastMessageTime' : 
+                                               room.date ? 'server date' : 
+                                               room.createdAt ? 'server createdAt' : 
+                                               'localStorage'
+                                      });
+                                      
+                                      if (!timeToShow) {
+                                        // 모든 시간 정보가 없으면 현재 시간 사용
+                                        timeToShow = new Date().toISOString();
+                                      }
+                                      
+                                      try {
+                                        let date: Date;
+                                        
+                                        // 한국어 시간 형식 처리 ("오후 4:44", "오전 9:30" 등)
+                                        if (timeToShow.includes('오후') || timeToShow.includes('오전')) {
+                                          // 한국어 시간 형식을 현재 날짜와 결합
+                                          const today = new Date();
+                                          const timeStr = timeToShow.replace('오후', '').replace('오전', '').trim();
+                                          const [hour, minute] = timeStr.split(':').map(Number);
+                                          
+                                          date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                                          if (timeToShow.includes('오후') && hour !== 12) {
+                                            date.setHours(hour + 12);
+                                          } else if (timeToShow.includes('오전') && hour === 12) {
+                                            date.setHours(0);
+                                          } else {
+                                            date.setHours(hour);
+                                          }
+                                          date.setMinutes(minute);
+                                        } else {
+                                          // 일반적인 날짜 형식
+                                          date = new Date(timeToShow);
+                                        }
+                                        
+                                        if (isNaN(date.getTime())) {
+                                          console.warn(`[HomePage] Invalid date for room ${room.id}:`, timeToShow);
+                                          return '시간 정보 없음';
+                                        }
+                                        
+                                        const now = new Date();
+                                        const diffMs = now.getTime() - date.getTime();
+                                        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                                        
+                                        console.log(`[HomePage] Time calculation for room ${room.id}:`, {
+                                          messageTime: date.toISOString(),
+                                          currentTime: now.toISOString(),
+                                          diffMs,
+                                          diffMinutes,
+                                          diffHours,
+                                          diffDays
+                                        });
+                                        
+                                        // 미래 시간인 경우 처리
+                                        if (diffMs < 0) {
+                                          console.warn(`[HomePage] Future time detected for room ${room.id}:`, date.toISOString());
+                                          return '시간 정보 오류';
+                                        }
+                                        
+                                        // 상대적 시간 표시
+                                        if (diffMinutes < 1) return '방금 전';
+                                        if (diffMinutes < 60) return `${diffMinutes}분 전`;
+                                        if (diffHours < 24) return `${diffHours}시간 전`;
+                                        if (diffDays < 7) return `${diffDays}일 전`;
+                                        
+                                        // 그 외에는 정확한 시간
+                                        return date.toLocaleTimeString('ko-KR', { 
+                                          hour: 'numeric', 
+                                          minute: '2-digit',
+                                          hour12: true 
+                                        });
+                                      } catch (error) {
+                                        console.error('Error formatting time:', error, 'Input:', timeToShow);
+                                        return '시간 정보 없음';
+                                      }
+                                    })()}
+                                  </small>
+                                </div>
+                                <p className="mb-0 text-muted small">1:1 채팅</p>
+                              </div>
+                              <div className="d-flex align-items-center gap-2">
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="p-1 text-danger"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleLeaveRoom(room.id, room.roomName);
+                                  }}
+                                  disabled={loading}
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                      </>
+                    )}
+                  </>
                 ) : (
                   <div className="text-center text-muted p-4">
                     {loading ? (
