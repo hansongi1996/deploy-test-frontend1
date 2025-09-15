@@ -6,6 +6,7 @@ import { joinChatRoom, leaveChatRoom, getRoomParticipants, getChatMessages, getC
 import socketService from '../services/socketService';
 import MessageBubble from '../components/MessageBubble';
 import MessageInput from '../components/MessageInput';
+import ParticipantList from '../components/ParticipantList';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import Header from '../components/Header';
@@ -17,6 +18,7 @@ const ChatRoomPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(true);
   const [roomType, setRoomType] = useState<'ONE_TO_ONE' | 'GROUP'>('GROUP'); // 채팅방 타입 상태 추가
+  const [roomName, setRoomName] = useState<string>(''); // 채팅방 이름 상태 추가
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const subscribedRef = useRef(false);
   const processedMessageIds = useRef<Set<number>>(new Set());
@@ -56,15 +58,19 @@ const ChatRoomPage: React.FC = () => {
           console.log('Current room found:', currentRoom);
           if (currentRoom) {
             console.log('Setting room type to:', currentRoom.type);
+            console.log('Setting room name to:', currentRoom.roomName);
             setRoomType(currentRoom.type);
-            console.log('Successfully loaded room info from rooms list, room type:', currentRoom.type);
+            setRoomName(currentRoom.roomName);
+            console.log('Successfully loaded room info from rooms list, room type:', currentRoom.type, 'room name:', currentRoom.roomName);
           } else {
             console.warn('Room not found in rooms list, using default GROUP type');
             setRoomType('GROUP');
+            setRoomName(`Room #${roomId}`);
           }
         } catch (roomError) {
           console.warn('Failed to load room info from rooms list:', roomError);
           setRoomType('GROUP'); // 기본값으로 그룹 채팅 설정
+          setRoomName(`Room #${roomId}`);
         }
 
         // 3. 참여자 목록 로드 시도 (실패해도 계속 진행)
@@ -383,36 +389,57 @@ const ChatRoomPage: React.FC = () => {
 
       {/* Main Content */}
       <div className="d-flex flex-grow-1">
-        {/* Left Panel - Chat List (Fixed) */}
+        {/* Left Panel - Participants Sidebar (Fixed) */}
         <div className="bg-light border-end d-flex flex-column" style={{ position: 'fixed', width: '280px', height: 'calc(100vh - 80px)', left: 0, top: '80px', zIndex: 1000 }}>
-          {/* Chat Header */}
+          {/* Sidebar Header */}
           <div className="p-3 border-bottom">
             <div className="d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">채팅</h5>
+              <h5 className="mb-0">
+                <i className="bi bi-people me-2"></i>
+                참여자
+              </h5>
               <Button 
                 variant="link" 
                 size="sm" 
                 className="p-1 text-primary"
                 onClick={() => window.location.href = '/'}
+                title="채팅방 목록으로 돌아가기"
               >
-                <i className="bi bi-search"></i>
+                <i className="bi bi-arrow-left"></i>
               </Button>
+            </div>
+            <div className="mt-2">
+              <small className="text-muted">
+                {roomType === 'ONE_TO_ONE' ? '1:1 채팅' : '그룹 채팅'} • {participants.length}명 참여중
+              </small>
             </div>
           </div>
 
+          {/* Participants List */}
+          <div className="flex-grow-1 p-3">
+            <ParticipantList
+              participants={participants}
+              currentUserId={user?.id}
+              roomType={roomType}
+              onParticipantClick={(participant) => {
+                console.log('Participant clicked:', participant);
+                // TODO: 참여자 프로필 모달 또는 상세 정보 표시
+              }}
+            />
+          </div>
 
-        {/* Back to Home Button */}
-        <div className="p-3 mt-auto">
-          <Button 
-            variant="outline-secondary" 
-            size="sm" 
-            className="w-100"
-            onClick={() => window.location.href = '/'}
-          >
-            <i className="bi bi-arrow-left me-2"></i>
-            채팅방 목록으로 돌아가기
-          </Button>
-        </div>
+          {/* Back to Home Button */}
+          <div className="p-3 border-top">
+            <Button 
+              variant="outline-secondary" 
+              size="sm" 
+              className="w-100"
+              onClick={() => window.location.href = '/'}
+            >
+              <i className="bi bi-arrow-left me-2"></i>
+              채팅방 목록으로 돌아가기
+            </Button>
+          </div>
         </div>
 
         {/* Right Panel - Chat Room */}
@@ -422,7 +449,11 @@ const ChatRoomPage: React.FC = () => {
           <div className="d-flex align-items-center">
             <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
                  style={{ width: '40px', height: '40px', fontSize: '16px' }}>
-              {roomId?.charAt(0) || 'R'}
+              {roomType === 'ONE_TO_ONE' ? 
+                (participants.length >= 2 ? 
+                  (participants.find(p => p.id !== user?.id)?.nickname || 
+                   participants.find(p => p.id !== user?.id)?.username || '?').charAt(0).toUpperCase() : '1') :
+                (roomName || `Room #${roomId}`).charAt(0).toUpperCase()}
             </div>
             <div>
               <h5 className="mb-0">
@@ -431,7 +462,7 @@ const ChatRoomPage: React.FC = () => {
                     participants.find(p => p.id !== user?.id)?.nickname || 
                     participants.find(p => p.id !== user?.id)?.username || 
                     '1:1 채팅' : '1:1 채팅') : 
-                  `Room #${roomId}`}
+                  (roomName || `Room #${roomId}`)}
               </h5>
               <small className="text-muted">
                 {participants.length}명 참여중

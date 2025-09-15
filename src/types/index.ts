@@ -41,7 +41,10 @@ export interface ChatRoom {
   id: number;
   roomName: string;
   type: ChatRoomType;
-  createdAt: string;
+  participantCount?: number;
+  unreadCount?: number;
+  date?: string;
+  createdAt?: string;
 }
 
 export interface ChatRoomParticipant {

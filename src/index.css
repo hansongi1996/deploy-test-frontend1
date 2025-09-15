@@ -80,3 +80,31 @@ button:focus-visible {
     transform: rotate(360deg);
   }
 }
+
+/* Custom styles for chat interface */
+.hover-bg-light:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Participant list styles */
+.participants-container {
+  scrollbar-width: thin;
+  scrollbar-color: #dee2e6 transparent;
+}
+
+.participants-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.participants-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.participants-container::-webkit-scrollbar-thumb {
+  background-color: #dee2e6;
+  border-radius: 2px;
+}
+
+.participants-container::-webkit-scrollbar-thumb:hover {
+  background-color: #adb5bd;
+}

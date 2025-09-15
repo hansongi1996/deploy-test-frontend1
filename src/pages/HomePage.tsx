@@ -55,6 +55,8 @@ const HomePage: React.FC = () => {
       }
       
       const data = await getChatRooms();
+      console.log('Raw chat rooms data:', data);
+      console.log('First room data:', data[0]);
       setRooms(data);
       console.log('Successfully loaded chat rooms:', data.length);
     } catch (error: any) {
@@ -280,20 +282,41 @@ const HomePage: React.FC = () => {
                         <div className="d-flex justify-content-between align-items-center">
                           <h6 className="mb-1">{room.roomName}</h6>
                           <small className="text-muted">
-                            {new Date(room.createdAt).toLocaleTimeString('ko-KR', { 
-                              hour: 'numeric', 
-                              minute: '2-digit',
-                              hour12: true 
-                            })}
+                            {(() => {
+                              const dateStr = room.date || room.createdAt;
+                              if (!dateStr) return '시간 없음';
+                              
+                              try {
+                                // 한국어 시간 형식 처리 (예: "오후 2:20")
+                                if (typeof dateStr === 'string' && dateStr.includes('오후') || dateStr.includes('오전')) {
+                                  console.log('Korean time format detected:', dateStr);
+                                  return dateStr; // 이미 한국어 형식이면 그대로 반환
+                                }
+                                
+                                const date = new Date(dateStr);
+                                if (isNaN(date.getTime())) {
+                                  console.warn('Invalid date string:', dateStr);
+                                  return '시간 없음';
+                                }
+                                return date.toLocaleTimeString('ko-KR', { 
+                                  hour: 'numeric', 
+                                  minute: '2-digit',
+                                  hour12: true 
+                                });
+                              } catch (error) {
+                                console.error('Date parsing error:', error, 'for date:', dateStr);
+                                return '시간 없음';
+                              }
+                            })()}
                           </small>
                         </div>
                         <p className="mb-0 text-muted small">
-                          {room.type === 'ONE_TO_ONE' ? '1:1 채팅' : '그룹 채팅'}
+                          {room.participantCount || 0}명 • {room.type === 'ONE_TO_ONE' ? '1:1 채팅' : '그룹 채팅'}
                         </p>
                       </div>
                       <div className="d-flex align-items-center gap-2">
-                        {index === 0 && (
-                          <span className="badge bg-success rounded-pill">1</span>
+                        {room.unreadCount && room.unreadCount > 0 && (
+                          <span className="badge bg-success rounded-pill">{room.unreadCount}</span>
                         )}
                         <Button
                           variant="link"
