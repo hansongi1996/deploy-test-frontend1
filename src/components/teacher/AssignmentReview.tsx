@@ -169,18 +169,15 @@ export default function AssignmentReview() {
   // 제출물 목록 표시
   return (
     <div className="d-flex justify-content-center">
-      <Panel title={`${selectedAssignment?.title || '과제'} - 제출 현황`}>
+      <Panel title={selectedAssignment?.title || '과제'}>
         <div className="fs-6">
-          <div className="d-flex justify-content-between align-items-center mb-3">
+          <div className="mb-3">
             <button 
               className="btn btn-outline-secondary btn-sm"
               onClick={goBackToAssignments}
             >
               <i className="bi bi-arrow-left me-1"></i>과제 목록으로 돌아가기
             </button>
-            <div className="text-muted small">
-              총 {submissions.length}명의 제출물
-            </div>
           </div>
 
           <div className="space-y-2">

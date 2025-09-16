@@ -129,8 +129,8 @@ const UserSelectionModal: React.FC<UserSelectionModalProps> = ({
                   {(user.fullName && user.fullName.charAt(0)) || (user.username && user.username.charAt(0)) || '?'}
                 </div>
                 <div className="flex-grow-1">
-                  <div className="fw-bold">{user.fullName || '이름 없음'}</div>
-                  <small className="text-muted">@{user.username || 'username 없음'}</small>
+                  <div className="fw-bold">{user.fullName || user.username}</div>
+                  <small className="text-muted">@{user.username}</small>
                   {user.role && (
                     <span className={`badge ms-2 ${
                       user.role === 'ADMIN' ? 'bg-danger' :

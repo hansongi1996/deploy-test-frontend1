@@ -656,9 +656,9 @@ const HomePage: React.FC = () => {
                         {(selectedUser.fullName && selectedUser.fullName.charAt(0)) || (selectedUser.username && selectedUser.username.charAt(0)) || '?'}
                       </div>
                       <div>
-                        <small className="fw-bold">{selectedUser.fullName || '이름 없음'}</small>
+                        <small className="fw-bold">{selectedUser.fullName || selectedUser.username}</small>
                         <br />
-                        <small className="text-muted">@{selectedUser.username || 'username 없음'}</small>
+                        <small className="text-muted">@{selectedUser.username}</small>
                       </div>
                     </div>
                     <Button 

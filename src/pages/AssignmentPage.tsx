@@ -40,9 +40,23 @@ const AssignmentPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await getAssignments();
-      setAssignments(data);
-      if (data.length > 0 && !selectedAssignment) {
-        setSelectedAssignment(data[0]);
+      
+      // 각 과제의 상세 정보를 불러와서 제출물 데이터 포함
+      const assignmentsWithDetails = await Promise.all(
+        data.map(async (assignment) => {
+          try {
+            const detailedAssignment = await getAssignment(assignment.id);
+            return detailedAssignment;
+          } catch (error) {
+            console.error(`Failed to load details for assignment ${assignment.id}:`, error);
+            return assignment; // 실패시 기본 정보만 사용
+          }
+        })
+      );
+      
+      setAssignments(assignmentsWithDetails);
+      if (assignmentsWithDetails.length > 0 && !selectedAssignment) {
+        setSelectedAssignment(assignmentsWithDetails[0]);
       }
     } catch (err) {
       setError('과제 목록을 불러오는데 실패했습니다.');
@@ -140,24 +154,53 @@ const AssignmentPage: React.FC = () => {
     return selectedAssignment.submissions[0] || null;
   };
 
-  const getStatusBadge = (status: string) => {
+  // 과제의 실제 상태를 결정하는 함수
+  const getAssignmentStatus = (assignment: Assignment): string => {
+    // 제출물 데이터가 없는 경우
+    if (!assignment.submissions || assignment.submissions.length === 0) {
+      return 'NOT_SUBMITTED';
+    }
+
+    // 학생 페이지에서는 첫 번째 제출물을 현재 사용자 것으로 간주
+    // (학생은 보통 자신의 제출물만 볼 수 있음)
+    const submission = assignment.submissions.length > 0 ? assignment.submissions[0] : null;
+
+    if (!submission) {
+      return 'NOT_SUBMITTED';
+    }
+
+    // 제출물의 상태에 따라 반환
+    if (submission.status === 'GRADED') {
+      return 'GRADED';
+    } else if (submission.status === 'SUBMITTED') {
+      return 'SUBMITTED';
+    } else {
+      return 'NOT_SUBMITTED';
+    }
+  };
+
+  const getStatusBadge = (assignment: Assignment) => {
+    const status = getAssignmentStatus(assignment);
+    
     switch (status) {
-      case 'IN_PROGRESS':
-        return <Badge bg="primary">진행중</Badge>;
+      case 'NOT_SUBMITTED':
+        return <Badge bg="secondary">미제출</Badge>;
       case 'SUBMITTED':
         return <Badge bg="success">제출완료</Badge>;
       case 'LATE':
         return <Badge bg="danger">지각</Badge>;
       case 'GRADED':
         return <Badge bg="info">채점완료</Badge>;
+      case 'IN_PROGRESS':
+        return <Badge bg="primary">진행중</Badge>;
       default:
-        return <Badge bg="secondary">알 수 없음</Badge>;
+        return <Badge bg="secondary">미제출</Badge>;
     }
   };
 
   const getStatusCounts = () => {
-    const notSubmitted = assignments.filter(a => a.status === 'IN_PROGRESS').length;
-    const late = assignments.filter(a => a.status === 'LATE').length;
+    const notSubmitted = assignments.filter(a => getAssignmentStatus(a) === 'NOT_SUBMITTED').length;
+    const late = assignments.filter(a => getAssignmentStatus(a) === 'LATE').length;
     return { notSubmitted, late };
   };
 
@@ -236,15 +279,9 @@ const AssignmentPage: React.FC = () => {
                     <ListGroup.Item
                       key={assignment.id}
                       className={`assignment-item ${selectedAssignment?.id === assignment.id ? 'active' : ''}`}
-                      onClick={async () => {
-                        try {
-                          // 선택된 과제의 상세 정보를 가져옵니다 (제출물 포함)
-                          const assignmentDetails = await getAssignment(assignment.id);
-                          setSelectedAssignment(assignmentDetails);
-                        } catch (error) {
-                          console.error('Failed to load assignment details:', error);
-                          setSelectedAssignment(assignment); // 실패시 기본 정보만 사용
-                        }
+                      onClick={() => {
+                        // 이미 상세 정보가 포함되어 있으므로 바로 설정
+                        setSelectedAssignment(assignment);
                         setLinkUrl('');
                         setFile(null);
                         setSubmissionType('LINK');
@@ -263,7 +300,7 @@ const AssignmentPage: React.FC = () => {
                         마감일 {formatDate(assignment.dueDate)}
                       </div>
                       <div className="mt-1">
-                        {getStatusBadge(assignment.status)}
+                        {getStatusBadge(assignment)}
                       </div>
                     </ListGroup.Item>
                   ))}
@@ -323,20 +360,6 @@ const AssignmentPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Submission Progress */}
-                    <div className="mb-3">
-                      <div className="d-flex justify-content-between mb-1">
-                        <span className="small">제출 현황</span>
-                        <span className="small">
-                          {selectedAssignment.submissionCount}/{selectedAssignment.totalStudents}명
-                        </span>
-                      </div>
-                      <ProgressBar
-                        now={(selectedAssignment.submissionCount / selectedAssignment.totalStudents) * 100}
-                        variant="primary"
-                        style={{ height: '8px' }}
-                      />
-                    </div>
                   </Card.Body>
                 </Card>
 
