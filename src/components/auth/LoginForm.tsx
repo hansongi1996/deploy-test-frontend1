@@ -212,12 +212,6 @@ const LoginForm = () => {
           </div>
         </div>
 
-        {/* 나중에 지울 부분 */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-xs text-gray-500 text-center mb-1">테스트 계정</p>
-          <p className="text-xs text-gray-600 text-center">이메일: test@example.com</p>
-          <p className="text-xs text-gray-600 text-center">비밀번호: password123</p>
-        </div>
       </div>
     </div>
   );

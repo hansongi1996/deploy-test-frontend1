@@ -24,14 +24,6 @@ const RegisterForm = () => {
     }));
   };
 
-  // ✅ 뒤로가기 버튼 처리
-  const handleBack = () => {
-    // (선택) 작성 중 경고
-    // if (Object.values(formData).some(v => v)) {
-    //   if (!window.confirm("작성 중인 내용이 사라집니다. 돌아갈까요?")) return;
-    // }
-    navigate(-1);
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -79,22 +71,10 @@ const RegisterForm = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
-        {/* ✅ 상단 헤더 (뒤로가기 + 타이틀) */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
-              aria-label="뒤로 가기"
-            >
-              <span className="text-lg">←</span>
-              <span className="text-sm font-medium">뒤로 가기</span>
-            </button>
-
-            <h2 className="ml-2 text-xl font-semibold text-gray-800">회원가입</h2>
-          </div>
-          <p className="text-sm text-gray-500 mt-2">PeerFlow에 오신 것을 환영합니다</p>
+        {/* 상단 헤더 */}
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">회원가입</h2>
+          <p className="text-sm text-gray-500">PeerFlow에 오신 것을 환영합니다</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
