@@ -228,19 +228,71 @@ export default function AssignmentReview() {
                   
                   <div className="border-top pt-2">
                     <div className="small text-muted">
+                      {/* 디버깅을 위한 콘솔 로그 */}
+                      {console.log('=== TEACHER PAGE SUBMISSION DEBUG ===', {
+                        submissionId: submission.id || submission.submissionId,
+                        file_url: submission.file_url,
+                        text_content: submission.text_content,
+                        fileUrl: (submission as any).fileUrl,
+                        attachmentUrls: (submission as any).attachmentUrls,
+                        allKeys: Object.keys(submission),
+                        allValues: Object.entries(submission),
+                        fullSubmission: submission
+                      })}
                       {submission.file_url ? (
                         <div>
                           <i className="bi bi-file-earmark me-1"></i>
-                          파일: <a href={submission.file_url} className="text-decoration-none">
+                          파일: <a href={submission.file_url} className="text-decoration-none" target="_blank" rel="noopener noreferrer">
                             {submission.file_url}
                           </a>
                         </div>
-                      ) : submission.text_content ? (
+                      ) : submission.text_content || (submission as any).textContent || (submission as any).content || (submission as any).linkUrl || (submission as any).fileUrl || ((submission as any).attachmentUrls && (submission as any).attachmentUrls.length > 0) ? (
                         <div>
-                          <i className="bi bi-file-text me-1"></i>
-                          텍스트: <span className="text-truncate" style={{maxWidth: '300px', display: 'inline-block'}}>
-                            {submission.text_content}
-                          </span>
+                          {(() => {
+                            // 다양한 필드에서 제출 내용 찾기 (백엔드에서 textContent로 보냄)
+                            const attachmentUrls = (submission as any).attachmentUrls || [];
+                            const content = submission.text_content || 
+                                           (submission as any).textContent || 
+                                           (submission as any).content || 
+                                           (submission as any).linkUrl || 
+                                           (submission as any).link_url ||
+                                           (submission as any).fileUrl ||
+                                           (attachmentUrls.length > 0 ? attachmentUrls[0] : null);
+                            
+                            console.log('=== CONTENT SEARCH DEBUG ===', {
+                              text_content: submission.text_content,
+                              textContent: (submission as any).textContent,
+                              content: (submission as any).content,
+                              linkUrl: (submission as any).linkUrl,
+                              fileUrl: (submission as any).fileUrl,
+                              attachmentUrls: attachmentUrls,
+                              finalContent: content,
+                              note: 'Now checking linkUrl field based on SubmissionRequestDTO'
+                            });
+                            
+                            if (content && content.startsWith('http')) {
+                              return (
+                                <>
+                                  <i className="bi bi-link-45deg me-1"></i>
+                                  링크: <a href={content} className="text-decoration-none" target="_blank" rel="noopener noreferrer">
+                                    <span className="text-truncate" style={{maxWidth: '300px', display: 'inline-block'}}>
+                                      {content}
+                                    </span>
+                                  </a>
+                                </>
+                              );
+                            } else if (content) {
+                              return (
+                                <>
+                                  <i className="bi bi-file-text me-1"></i>
+                                  텍스트: <span className="text-truncate" style={{maxWidth: '300px', display: 'inline-block'}}>
+                                    {content}
+                                  </span>
+                                </>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       ) : (
                         <div className="text-muted">

@@ -67,23 +67,65 @@ export default function GradePage() {
           {/* 제출 내용 표시 */}
           <>
             <div className="font-semibold">제출 내용</div>
+            {/* 디버깅을 위한 콘솔 로그 */}
+            {console.log('=== GRADE PAGE SUBMISSION DEBUG ===', {
+              submissionId: submission?.id || submission?.submissionId,
+              file_url: submission?.file_url,
+              text_content: submission?.text_content,
+              allKeys: submission ? Object.keys(submission) : [],
+              fullSubmission: submission
+            })}
             {submission?.file_url ? (
               <>
                 <div className="font-semibold">첨부파일</div>
                 <a
                   className="underline"
                   href={submission.file_url}
-                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   {submission.file_url}
                 </a>
               </>
-            ) : submission?.text_content ? (
+            ) : submission?.text_content || (submission as any)?.textContent || (submission as any)?.content || (submission as any)?.linkUrl || (submission as any)?.fileUrl ? (
               <>
-                <div className="font-semibold">텍스트 제출</div>
-                <div className="whitespace-pre-wrap p-2 bg-white border rounded">
-                  {submission.text_content}
-                </div>
+                {(() => {
+                  // 다양한 필드에서 제출 내용 찾기
+                  const content = submission?.text_content || 
+                                 (submission as any)?.textContent || 
+                                 (submission as any)?.content || 
+                                 (submission as any)?.linkUrl || 
+                                 (submission as any)?.link_url ||
+                                 (submission as any)?.fileUrl;
+                  
+                  if (content && content.startsWith('http')) {
+                    return (
+                      <>
+                        <div className="font-semibold">링크 제출</div>
+                        <div className="p-2 bg-white border rounded">
+                          <a 
+                            href={content} 
+                            className="underline text-blue-600"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {content}
+                          </a>
+                        </div>
+                      </>
+                    );
+                  } else if (content) {
+                    return (
+                      <>
+                        <div className="font-semibold">텍스트 제출</div>
+                        <div className="whitespace-pre-wrap p-2 bg-white border rounded">
+                          {content}
+                        </div>
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
               </>
             ) : (
               <div className="text-gray-500">제출된 내용이 없습니다.</div>

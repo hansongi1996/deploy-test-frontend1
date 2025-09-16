@@ -8,6 +8,7 @@ import type {
   AssignmentSubmission,
   Notice,
   LoginRequest,
+  SubmissionRequestDTO,
   LoginResponse,
   User
 } from './types';
@@ -144,9 +145,22 @@ export const submitAssignment = async (
   assignmentId: number,
   textContent: string
 ): Promise<AssignmentSubmission> => {
-  const response = await api.post(`/assignments/${assignmentId}/submissions`, {
-    textContent
+  const requestData = { textContent };
+  
+  console.log('=== SUBMIT ASSIGNMENT API DEBUG ===', {
+    assignmentId,
+    textContent,
+    requestData,
+    url: `/assignments/${assignmentId}/submissions`
   });
+  
+  const response = await api.post(`/assignments/${assignmentId}/submissions`, requestData);
+  
+  console.log('=== SUBMIT ASSIGNMENT RESPONSE DEBUG ===', {
+    responseData: response.data,
+    responseStatus: response.status
+  });
+  
   return response.data;
 };
 // 강사용: 제출물 채점

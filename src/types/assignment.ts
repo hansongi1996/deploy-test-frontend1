@@ -5,6 +5,7 @@ export interface Assignment {
   title: string;
   description: string;
   dueDate: string; // ISO 문자열 가정
+  submissions?: Submission[]; // 해당 과제의 제출물들
 }
 
 export interface Submission {

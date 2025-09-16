@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Button, Form, Alert, Spinner, Badge, ProgressBar, Tab, Tabs, ListGroup } from 'react-bootstrap';
-import { getAssignments, submitAssignment, uploadFile } from '../api';
-import type { Assignment } from '../types';
+import { getAssignments, getAssignment, submitAssignment, uploadFile } from '../api';
+import type { Assignment, SubmissionFromAPI } from '../types';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import Header from '../components/Header';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const AssignmentPage: React.FC = () => {
-  useSelector((state: RootState) => state.auth);
+  const { user } = useSelector((state: RootState) => state.auth);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,15 +65,31 @@ const AssignmentPage: React.FC = () => {
         return;
       }
 
+      console.log('=== STUDENT SUBMISSION DEBUG ===', {
+        assignmentId: selectedAssignment.id,
+        linkUrl: linkUrl,
+        submissionType: submissionType,
+        linkUrlLength: linkUrl.length,
+        linkUrlTrimmed: linkUrl.trim()
+      });
+
       await submitAssignment(
         selectedAssignment.id,
         linkUrl
       );
 
+      // 제출 후 해당 과제의 상세 정보를 다시 불러와서 제출 내역을 업데이트
+      try {
+        const updatedAssignment = await getAssignment(selectedAssignment.id);
+        setSelectedAssignment(updatedAssignment);
+      } catch (refreshError) {
+        console.error('Failed to refresh assignment details:', refreshError);
+      }
+
       setSubmitSuccess(true);
       setFile(null);
       setLinkUrl('');
-      setSubmissionType('FILE');
+      setSubmissionType('LINK');
       setActiveTab('submission-history');
     } catch (err) {
       setError('과제 제출에 실패했습니다.');
@@ -91,6 +107,37 @@ const AssignmentPage: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // 현재 사용자의 제출물을 찾는 함수
+  const getUserSubmission = (): SubmissionFromAPI | null => {
+    if (!selectedAssignment?.submissions || !user?.id) {
+      return null;
+    }
+    
+    // 방법 1: studentName으로 매칭 시도
+    const userSubmissionByName = selectedAssignment.submissions.find(
+      submission => {
+        const nameMatches = 
+          (submission as any).studentName === user.fullName ||
+          (submission as any).studentName === user.username;
+        
+        return nameMatches;
+      }
+    );
+    
+    if (userSubmissionByName) {
+      return userSubmissionByName;
+    }
+    
+    // 방법 2: 제출물이 하나뿐이라면 현재 사용자 것으로 간주
+    if (selectedAssignment.submissions.length === 1) {
+      return selectedAssignment.submissions[0];
+    }
+    
+    // 방법 3: 모든 제출물을 현재 사용자 것으로 간주 (임시)
+    // 학생 페이지에서는 보통 자신의 제출물만 보여주므로
+    return selectedAssignment.submissions[0] || null;
   };
 
   const getStatusBadge = (status: string) => {
@@ -189,7 +236,21 @@ const AssignmentPage: React.FC = () => {
                     <ListGroup.Item
                       key={assignment.id}
                       className={`assignment-item ${selectedAssignment?.id === assignment.id ? 'active' : ''}`}
-                      onClick={() => setSelectedAssignment(assignment)}
+                      onClick={async () => {
+                        try {
+                          // 선택된 과제의 상세 정보를 가져옵니다 (제출물 포함)
+                          const assignmentDetails = await getAssignment(assignment.id);
+                          setSelectedAssignment(assignmentDetails);
+                        } catch (error) {
+                          console.error('Failed to load assignment details:', error);
+                          setSelectedAssignment(assignment); // 실패시 기본 정보만 사용
+                        }
+                        setLinkUrl('');
+                        setFile(null);
+                        setSubmissionType('LINK');
+                        setError(null);
+                        setSubmitSuccess(false);
+                      }}
                       style={{ cursor: 'pointer', padding: '12px' }}
                     >
                       <div className="d-flex justify-content-between align-items-start mb-1">
@@ -342,7 +403,7 @@ const AssignmentPage: React.FC = () => {
                                   label="파일 업로드 (현재 비활성화)"
                                   name="submissionType"
                                   value="FILE"
-                                  checked={submissionType === 'FILE'}
+                                  checked={Boolean(submissionType === 'FILE')}
                                   onChange={(e) => setSubmissionType(e.target.value as 'FILE')}
                                   className="mb-2"
                                   disabled
@@ -352,7 +413,7 @@ const AssignmentPage: React.FC = () => {
                                   label="링크 제출"
                                   name="submissionType"
                                   value="LINK"
-                                  checked={submissionType === 'LINK'}
+                                  checked={Boolean(submissionType === 'LINK')}
                                   onChange={(e) => setSubmissionType(e.target.value as 'LINK')}
                                 />
                               </div>
@@ -380,7 +441,7 @@ const AssignmentPage: React.FC = () => {
                                 <Form.Control
                                   type="url"
                                   placeholder="https://example.com"
-                                  value={linkUrl}
+                                  value={linkUrl || ''}
                                   onChange={(e) => setLinkUrl(e.target.value)}
                                 />
                                 <Form.Text className="text-muted">
@@ -410,13 +471,100 @@ const AssignmentPage: React.FC = () => {
 
                       <Tab eventKey="submission-history" title="제출내역">
                         <div className="submission-history">
-                          <p className="text-muted">제출 내역이 없습니다.</p>
+                          {(() => {
+                            const userSubmission = getUserSubmission();
+                            if (!userSubmission) {
+                              return <p className="text-muted">제출 내역이 없습니다.</p>;
+                            }
+                            
+                            return (
+                              <div className="submission-details">
+                                <div className="mb-3">
+                                  <h6>제출 정보</h6>
+                                  <div className="border rounded p-3 bg-light">
+                                    <div className="row mb-2">
+                                      <div className="col-sm-3"><strong>제출일시:</strong></div>
+                                      <div className="col-sm-9">
+                                        {userSubmission.submitted_at 
+                                          ? formatDate(userSubmission.submitted_at)
+                                          : '정보 없음'}
+                                      </div>
+                                    </div>
+                                    <div className="row mb-2">
+                                      <div className="col-sm-3"><strong>제출 상태:</strong></div>
+                                      <div className="col-sm-9">
+                                        {userSubmission.status === 'SUBMITTED' && <Badge bg="success">제출완료</Badge>}
+                                        {userSubmission.status === 'GRADED' && <Badge bg="primary">채점완료</Badge>}
+                                        {userSubmission.status === 'NOT_SUBMITTED' && <Badge bg="secondary">미제출</Badge>}
+                                      </div>
+                                    </div>
+                                    {userSubmission.grade && (
+                                      <div className="row mb-2">
+                                        <div className="col-sm-3"><strong>점수:</strong></div>
+                                        <div className="col-sm-9">
+                                          <span className="badge bg-success fs-6">{userSubmission.grade}점</span>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {userSubmission.text_content ? (
+                                      <div className="row mb-2">
+                                        <div className="col-sm-3"><strong>제출 내용:</strong></div>
+                                        <div className="col-sm-9">
+                                          <div className="border rounded p-2 bg-white">
+                                            {userSubmission.text_content}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : null}
+                                    {userSubmission.file_url ? (
+                                      <div className="row mb-2">
+                                        <div className="col-sm-3"><strong>첨부파일:</strong></div>
+                                        <div className="col-sm-9">
+                                          <a href={userSubmission.file_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary">
+                                            <i className="bi bi-download me-1"></i>파일 다운로드
+                                          </a>
+                                        </div>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </div>
+                                
+                                {userSubmission.feedback && (
+                                  <div className="mb-3">
+                                    <h6>강사 피드백</h6>
+                                    <div className="border rounded p-3 bg-info bg-opacity-10">
+                                      {userSubmission.feedback}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </Tab>
 
                       <Tab eventKey="feedback" title="피드백">
                         <div className="feedback">
-                          <p className="text-muted">아직 피드백이 없습니다.</p>
+                          {(() => {
+                            const userSubmission = getUserSubmission();
+                            if (!userSubmission || !userSubmission.feedback) {
+                              return <p className="text-muted">아직 피드백이 없습니다.</p>;
+                            }
+                            
+                            return (
+                              <div className="feedback-content">
+                                <div className="border rounded p-3 bg-info bg-opacity-10">
+                                  <h6 className="mb-2">강사 피드백</h6>
+                                  <p className="mb-0">{userSubmission.feedback}</p>
+                                </div>
+                                {userSubmission.grade && (
+                                  <div className="mt-3">
+                                    <span className="badge bg-success fs-6">점수: {userSubmission.grade}점</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </Tab>
                     </Tabs>
