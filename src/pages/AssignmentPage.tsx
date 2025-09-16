@@ -60,7 +60,7 @@ const AssignmentPage: React.FC = () => {
       setError(null);
 
       let fileUrl: string | undefined;
-      
+
       if (submissionType === 'FILE') {
         if (!file) {
           setError('파일을 선택해주세요.');
@@ -142,28 +142,28 @@ const AssignmentPage: React.FC = () => {
   return (
     <div className="d-flex flex-column" style={{ height: '100vh' }}>
       <Header />
-      
+
       <div className="d-flex flex-grow-1">
         {/* Left Panel - Navigation Sidebar (Fixed) */}
         <div className="bg-light border-end d-flex flex-column" style={{ position: 'fixed', width: '280px', height: 'calc(100vh - 80px)', left: 0, top: '80px', zIndex: 1000 }}>
           {/* Main Navigation Tabs */}
           <div className="d-flex border-bottom">
-            <Button 
-              variant="link" 
+            <Button
+              variant="link"
               className={`flex-fill text-decoration-none ${activeNavTab === 'notices' ? 'text-primary border-bottom border-primary' : 'text-dark'}`}
               onClick={() => navigate('/notices')}
             >
               공지사항
             </Button>
-            <Button 
-              variant="link" 
+            <Button
+              variant="link"
               className={`flex-fill text-decoration-none ${activeNavTab === 'assignments' ? 'text-primary border-bottom border-primary' : 'text-dark'}`}
               onClick={() => navigate('/assignments')}
             >
               과제
             </Button>
-            <Button 
-              variant="link" 
+            <Button
+              variant="link"
               className={`flex-fill text-decoration-none ${activeNavTab === 'chat' ? 'text-primary border-bottom border-primary' : 'text-dark'}`}
               onClick={() => navigate('/')}
             >
@@ -253,15 +253,15 @@ const AssignmentPage: React.FC = () => {
                 </div>
               </div>
             ) : selectedAssignment ? (
-                <div>
-                  {/* Assignment Info */}
-                  <Card className="mb-4">
+              <div>
+                {/* Assignment Info */}
+                <Card className="mb-4">
                   <Card.Body>
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <div>
                         <h4 className="mb-1">{selectedAssignment.title}</h4>
                         <div className="text-muted small">
-                          마감일: {formatDate(selectedAssignment.dueDate)} | 
+                          마감일: {formatDate(selectedAssignment.dueDate)} |
                           배점: {selectedAssignment.maxScore}점
                         </div>
                         <div className="mt-1">
@@ -282,7 +282,7 @@ const AssignmentPage: React.FC = () => {
                           {selectedAssignment.submissionCount}/{selectedAssignment.totalStudents}명
                         </span>
                       </div>
-                      <ProgressBar 
+                      <ProgressBar
                         now={(selectedAssignment.submissionCount / selectedAssignment.totalStudents) * 100}
                         variant="primary"
                         style={{ height: '8px' }}
@@ -302,7 +302,7 @@ const AssignmentPage: React.FC = () => {
                       <Tab eventKey="description" title="과제 설명">
                         <div className="assignment-description">
                           <p className="mb-4">{selectedAssignment.description}</p>
-                          
+
                           <h6 className="mb-3">요구사항</h6>
                           <ol className="mb-4">
                             {selectedAssignment.requirements?.map((req, index) => (
@@ -333,84 +333,84 @@ const AssignmentPage: React.FC = () => {
 
                       <Tab eventKey="submit" title="제출하기">
                         <div className="assignment-submit">
-          {error && (
-            <Alert variant="danger" dismissible onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
+                          {error && (
+                            <Alert variant="danger" dismissible onClose={() => setError(null)}>
+                              {error}
+                            </Alert>
+                          )}
 
-          {submitSuccess && (
-            <Alert variant="success" dismissible onClose={() => setSubmitSuccess(false)}>
-              과제가 성공적으로 제출되었습니다!
-            </Alert>
-          )}
+                          {submitSuccess && (
+                            <Alert variant="success" dismissible onClose={() => setSubmitSuccess(false)}>
+                              과제가 성공적으로 제출되었습니다!
+                            </Alert>
+                          )}
 
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>제출 방식</Form.Label>
-              <div>
-                <Form.Check
-                  type="radio"
-                  label="파일 업로드"
-                  name="submissionType"
-                  value="FILE"
-                  checked={submissionType === 'FILE'}
-                  onChange={(e) => setSubmissionType(e.target.value as 'FILE')}
-                  className="mb-2"
-                />
-                <Form.Check
-                  type="radio"
-                  label="링크 제출"
-                  name="submissionType"
-                  value="LINK"
-                  checked={submissionType === 'LINK'}
-                  onChange={(e) => setSubmissionType(e.target.value as 'LINK')}
-                />
-              </div>
-            </Form.Group>
+                          <Form>
+                            <Form.Group className="mb-3">
+                              <Form.Label>제출 방식</Form.Label>
+                              <div>
+                                <Form.Check
+                                  type="radio"
+                                  label="파일 업로드"
+                                  name="submissionType"
+                                  value="FILE"
+                                  checked={submissionType === 'FILE'}
+                                  onChange={(e) => setSubmissionType(e.target.value as 'FILE')}
+                                  className="mb-2"
+                                />
+                                <Form.Check
+                                  type="radio"
+                                  label="링크 제출"
+                                  name="submissionType"
+                                  value="LINK"
+                                  checked={submissionType === 'LINK'}
+                                  onChange={(e) => setSubmissionType(e.target.value as 'LINK')}
+                                />
+                              </div>
+                            </Form.Group>
 
-            {submissionType === 'FILE' ? (
-              <Form.Group className="mb-3">
-                <Form.Label>파일 선택</Form.Label>
-                <Form.Control
-                  type="file"
-                  onChange={(e) => {
-                    const target = e.target as HTMLInputElement;
-                    setFile(target.files?.[0] || null);
-                  }}
-                  accept=".pdf,.doc,.docx,.txt,.zip,.rar"
-                />
-                <Form.Text className="text-muted">
-                  지원 형식: PDF, DOC, DOCX, TXT, ZIP, RAR
-                </Form.Text>
-              </Form.Group>
-            ) : (
-              <Form.Group className="mb-3">
-                <Form.Label>링크 URL</Form.Label>
-                <Form.Control
-                  type="url"
-                  placeholder="https://example.com"
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                />
-                <Form.Text className="text-muted">
-                  GitHub, Google Drive, Dropbox 등의 링크를 입력해주세요.
-                </Form.Text>
-              </Form.Group>
-            )}
+                            {submissionType === 'FILE' ? (
+                              <Form.Group className="mb-3">
+                                <Form.Label>파일 선택</Form.Label>
+                                <Form.Control
+                                  type="file"
+                                  onChange={(e) => {
+                                    const target = e.target as HTMLInputElement;
+                                    setFile(target.files?.[0] || null);
+                                  }}
+                                  accept=".pdf,.doc,.docx,.txt,.zip,.rar"
+                                />
+                                <Form.Text className="text-muted">
+                                  지원 형식: PDF, DOC, DOCX, TXT, ZIP, RAR
+                                </Form.Text>
+                              </Form.Group>
+                            ) : (
+                              <Form.Group className="mb-3">
+                                <Form.Label>링크 URL</Form.Label>
+                                <Form.Control
+                                  type="url"
+                                  placeholder="https://example.com"
+                                  value={linkUrl}
+                                  onChange={(e) => setLinkUrl(e.target.value)}
+                                />
+                                <Form.Text className="text-muted">
+                                  GitHub, Google Drive, Dropbox 등의 링크를 입력해주세요.
+                                </Form.Text>
+                              </Form.Group>
+                            )}
 
-          <Button 
-            variant="primary" 
-            onClick={handleSubmit}
-            disabled={submitting}
+                            <Button
+                              variant="primary"
+                              onClick={handleSubmit}
+                              disabled={submitting}
                               className="w-100"
-          >
-            {submitting ? (
-              <>
-                <Spinner size="sm" className="me-2" />
-                제출 중...
-              </>
-            ) : (
+                            >
+                              {submitting ? (
+                                <>
+                                  <Spinner size="sm" className="me-2" />
+                                  제출 중...
+                                </>
+                              ) : (
                                 '과제 제출'
                               )}
                             </Button>
@@ -432,7 +432,7 @@ const AssignmentPage: React.FC = () => {
                     </Tabs>
                   </Card.Body>
                 </Card>
-                </div>
+              </div>
             ) : (
               <div className="d-flex align-items-center justify-content-center h-100">
                 <div className="text-center">
