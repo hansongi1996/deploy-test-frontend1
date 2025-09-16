@@ -162,7 +162,7 @@ export const submitAssignment = async (
 export const gradeSubmission = async (
   submissionId: number,
   payload: GradeRequestDTO
-) => await api.patch(`/submissions/${submissionId}`, payload);
+) => await api.patch(`/assignments/submissions/${submissionId}`, payload);
 
 export const deleteAssignment = async (assignmentId: number): Promise<void> => {
   await api.delete(`/assignments/${assignmentId}`);
