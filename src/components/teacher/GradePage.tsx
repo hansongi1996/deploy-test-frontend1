@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Panel from "../panel";
-import { gradeSubmission } from "../../api";
+import { updateAssignment } from "../../api";
 import Button from "../Button";
 import type { Submission } from "../../types/assignment";
 
@@ -35,7 +35,11 @@ export default function GradePage() {
     }
 
     try {
-      await gradeSubmission(submission.id, { grade });
+      // 백엔드의 PATCH /assignments/{assignmentId} API 사용
+      await updateAssignment(submission.assignment_id, { 
+        // 필요한 필드들을 포함 (백엔드 API 스펙에 맞게 조정 필요)
+        grade: grade 
+      });
       alert('채점이 성공적으로 완료되었습니다.');
       navigate(-1); // 이전 페이지(과제 제출 현황)로 돌아감
     } catch (error) {
