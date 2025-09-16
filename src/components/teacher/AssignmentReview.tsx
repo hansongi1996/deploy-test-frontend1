@@ -126,9 +126,9 @@ export default function AssignmentReview() {
             
             {assignments.length > 0 ? (
               <div className="list-group">
-                {assignments.map((assignment) => (
+                {assignments.map((assignment, index) => (
                   <div
-                    key={assignment.id}
+                    key={assignment.id || `assignment-${index}`}
                     className="list-group-item list-group-item-action cursor-pointer"
                     onClick={() => handleSelectAssignment(assignment)}
                     style={{ cursor: 'pointer' }}
@@ -181,8 +181,8 @@ export default function AssignmentReview() {
 
           <div className="space-y-2">
             {submissions.length > 0 ? (
-              submissions.map((submission) => (
-                <div key={submission.id} className="border rounded p-3 mb-3">
+              submissions.map((submission, index) => (
+                <div key={submission.id || `submission-${index}`} className="border rounded p-3 mb-3">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <div className="flex-grow-1">
                       <div className="d-flex align-items-center gap-2 mb-1">

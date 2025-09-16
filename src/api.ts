@@ -132,10 +132,6 @@ export const getAssignment = async (assignmentId: number): Promise<Assignment> =
   return response.data;
 };
 
-export const getAssignmentSubmissions = async (assignmentId: number): Promise<AssignmentSubmission[]> => {
-  const response = await api.get(`/assignments/${assignmentId}/submissions`);
-  return response.data;
-};
 export const getAssignmentDetails = async (
   assignmentId: number,
 ): Promise<Assignment> => {
