@@ -143,6 +143,7 @@ export const getAssignmentDetails = async (
   return response.data;
 };
 
+// 강사용: 특정 과제의 제출물 목록 조회
 export const getSubmissionsByAssignmentId = async (
   assignmentId: number,
 ): Promise<Submission[]> => {
@@ -150,6 +151,7 @@ export const getSubmissionsByAssignmentId = async (
   return response.data;
 };
 
+// 학생용: 과제 제출
 export const submitAssignment = async (
   assignmentId: number,
   textContent: string
@@ -159,6 +161,7 @@ export const submitAssignment = async (
   });
   return response.data;
 };
+// 강사용: 제출물 채점
 export const gradeSubmission = async (
   submissionId: number,
   payload: GradeRequestDTO
