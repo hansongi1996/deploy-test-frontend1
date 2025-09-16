@@ -8,7 +8,6 @@ interface AssignmentFormProps {
     description: string;
     dueDate: string; // dueDate는 이제 'YYYY-MM-DDTHH:mm' 형식을 가질 수 있습니다.
     onSubmit: (formData: { title: string; description: string; dueDate: string }) => Promise<void>;
-    onCancel: () => void; // onCancel 함수를 props로 받습니다.
     isEdit: boolean;
 }
 
@@ -17,7 +16,6 @@ export default function AssignmentForm({
     description: initialDescription,
     dueDate: initialDueDate,
     onSubmit,
-    onCancel, // onCancel 함수를 인자로 받습니다.
     isEdit,
 }: AssignmentFormProps) {
     const [title, setTitle] = useState(initialTitle);
@@ -38,9 +36,6 @@ export default function AssignmentForm({
         await onSubmit({ title, description, dueDate });
     };
 
-    const handleGoBack = () => {
-        onCancel();
-    };
 
     return (
         <div className="d-flex justify-content-center">
@@ -81,10 +76,6 @@ export default function AssignmentForm({
                         </label>
 
                         <div className="d-flex justify-content-end gap-2 mt-3">
-                            {/* handleReset 대신 handleGoBack 함수를 연결합니다. */}
-                            <button className="btn btn-dark" onClick={handleGoBack}>
-                                뒤로
-                            </button>
                             <button className="btn btn-success" onClick={handleSubmit}>
                                 {isEdit ? '수정하기' : '등록하기'}
                             </button>

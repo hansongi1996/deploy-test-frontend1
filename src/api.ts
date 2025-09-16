@@ -311,4 +311,10 @@ export const changePassword = async (
   return response.data;
 };
 
+// 계정 삭제 API
+export const deleteAccount = async (): Promise<{ message: string }> => {
+  const response = await api.delete('/users/me/delete');
+  return response.data;
+};
+
 export default api;

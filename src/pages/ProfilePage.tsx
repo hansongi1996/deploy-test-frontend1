@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { Container, Card, Button } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../store';
 import Header from '../components/Header';
 import AvatarUploader from '../components/profile/AvatarUploader';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
+import { deleteAccount } from '../api';
+import { logout } from '../store/slices/authSlice';
 
 const ProfilePage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
   const userId = user?.id ?? 0; // 로그인 연동 전이라면 임시값 0, 실제론 반드시 유저 id 사용
   
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'name' | 'password'>('name');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEditClick = (type: 'name' | 'password') => {
     setModalType(type);
@@ -20,6 +24,37 @@ const ProfilePage: React.FC = () => {
 
   const handleModalClose = () => {
     setShowModal(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmMessage = '정말로 계정을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 모든 데이터가 영구적으로 삭제됩니다.';
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    const doubleConfirm = '한 번 더 확인합니다.\n계정 삭제를 진행하시겠습니까?';
+    if (!confirm(doubleConfirm)) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await deleteAccount();
+      
+      // 계정 삭제 성공 시 로그아웃 처리
+      dispatch(logout());
+      
+      // 성공 메시지 표시 후 로그인 페이지로 이동
+      alert('계정이 성공적으로 삭제되었습니다.');
+      window.location.href = '/login';
+      
+    } catch (error: any) {
+      console.error('계정 삭제 실패:', error);
+      alert(error.response?.data?.message || '계정 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -72,8 +107,13 @@ const ProfilePage: React.FC = () => {
                 <hr className="my-4" />
                 
                 <div className="d-grid">
-                  <Button variant="outline-danger" size="lg">
-                    계정 삭제
+                  <Button 
+                    variant="outline-danger" 
+                    size="lg"
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? '삭제 중...' : '계정 삭제'}
                   </Button>
                 </div>
               </Card.Body>

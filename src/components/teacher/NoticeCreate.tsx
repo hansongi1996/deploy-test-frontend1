@@ -62,9 +62,6 @@ export default function NoticeCreate({ onCancel, onSuccess }: NoticeCreateProps)
     }
   };
 
-  const handleGoBack = () => {
-    onCancel();
-  };
 
   return (
     <div className="d-flex justify-content-center">
@@ -116,13 +113,6 @@ export default function NoticeCreate({ onCancel, onSuccess }: NoticeCreateProps)
             </div>
 
             <div className="d-flex justify-content-end gap-2 mt-3">
-              <button 
-                className="btn btn-dark" 
-                onClick={handleGoBack}
-                disabled={loading}
-              >
-                뒤로
-              </button>
               <button 
                 className="btn btn-primary" 
                 onClick={handleSubmit}

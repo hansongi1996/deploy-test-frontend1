@@ -26,10 +26,6 @@ export default function AssignmentCreate() {
     }
   };
 
-  const handleCancel = () => {
-    navigate('/teacher');
-  };
-
   const defaultProps = useMemo(() => ({
     title: '',
     description: '',
@@ -42,7 +38,6 @@ export default function AssignmentCreate() {
         description={defaultProps.description}
         dueDate={defaultProps.dueDate}
         onSubmit={handleSubmit}
-        onCancel={handleCancel}
         isEdit={false}
       />
   );
