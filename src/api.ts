@@ -11,7 +11,7 @@ import type {
   LoginResponse,
   User
 } from './types';
-import type { AssignmentCreateRequestDTO, AssignmentUpdateRequestDTO, GradeRequestDTO, Submission } from './types/assignment';
+import type { AssignmentCreateRequestDTO, AssignmentUpdateRequestDTO, GradeRequestDTO } from './types/assignment';
 
 // === 세션/로컬 저장소 모두에서 토큰을 읽어오기 (세션 우선) ===
 function getToken(): string | null {
@@ -271,5 +271,30 @@ export const getAllUsers = async (): Promise<User[]> => {
 
 // ✅ AvatarUploader.tsx 가 기대하는 export 이름을 alias 로 제공
 export { uploadAvatar as uploadUserAvatar, deleteAvatar as removeUserAvatar };
+
+// 이름 변경 API
+export const updateUsername = async (
+  username: string
+): Promise<User> => {
+  const response = await api.put('/users/me/username', { username });
+  return response.data;
+};
+
+// 비밀번호 변경 API
+export const changePassword = async (
+  passwordData: { oldPassword: string; newPassword: string }
+): Promise<{ message: string }> => {
+  // Form 데이터 형식으로 변환
+  const formData = new URLSearchParams();
+  formData.append('oldPassword', passwordData.oldPassword);
+  formData.append('newPassword', passwordData.newPassword);
+  
+  const response = await api.post('/users/me/change-password', formData, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
+  return response.data;
+};
 
 export default api;

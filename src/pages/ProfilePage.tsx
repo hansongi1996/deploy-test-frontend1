@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Container, Card, Button } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import Header from '../components/Header';
 import AvatarUploader from '../components/profile/AvatarUploader';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 
 const ProfilePage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const userId = user?.id ?? 0; // 로그인 연동 전이라면 임시값 0, 실제론 반드시 유저 id 사용
+  
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState<'name' | 'password'>('name');
+
+  const handleEditClick = (type: 'name' | 'password') => {
+    setModalType(type);
+    setShowModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+  };
 
   return (
     <div className="d-flex flex-column w-100"  style={{ height: '100vh' }}>
@@ -40,13 +53,18 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 <div className="d-grid gap-2">
-                  <Button variant="outline-secondary" size="lg">
+                  <Button 
+                    variant="outline-secondary" 
+                    size="lg"
+                    onClick={() => handleEditClick('name')}
+                  >
                     이름 변경
                   </Button>
-                  <Button variant="outline-secondary" size="lg">
-                    이메일 변경
-                  </Button>
-                  <Button variant="outline-secondary" size="lg">
+                  <Button 
+                    variant="outline-secondary" 
+                    size="lg"
+                    onClick={() => handleEditClick('password')}
+                  >
                     비밀번호 변경
                   </Button>
                 </div>
@@ -63,6 +81,13 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       </Container>
+      
+      <ProfileEditModal
+        show={showModal}
+        onHide={handleModalClose}
+        user={user}
+        editType={modalType}
+      />
     </div>
   );
 };
