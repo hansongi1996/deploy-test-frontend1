@@ -134,11 +134,11 @@ const UserSelectionModal: React.FC<UserSelectionModalProps> = ({
                   {user.role && (
                     <span className={`badge ms-2 ${
                       user.role === 'ADMIN' ? 'bg-danger' :
-                      user.role === 'INSTRUCTOR' ? 'bg-warning' :
+                      user.role === 'TEACHER' ? 'bg-warning' :
                       'bg-secondary'
                     }`}>
                       {user.role === 'ADMIN' ? '관리자' :
-                       user.role === 'INSTRUCTOR' ? '강사' :
+                       user.role === 'TEACHER' ? '강사' :
                        '학생'}
                     </span>
                   )}

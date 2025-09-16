@@ -152,14 +152,10 @@ export const getSubmissionsByAssignmentId = async (
 
 export const submitAssignment = async (
   assignmentId: number,
-  submissionType: 'FILE' | 'LINK',
-  fileUrl?: string,
-  linkUrl?: string
+  textContent: string
 ): Promise<AssignmentSubmission> => {
   const response = await api.post(`/assignments/${assignmentId}/submissions`, {
-    submissionType,
-    fileUrl,
-    linkUrl
+    textContent
   });
   return response.data;
 };
@@ -201,11 +197,18 @@ export const createNotice = async (
   content: string,
   pinned: boolean = false
 ): Promise<Notice> => {
-  const response = await api.post('/announcements', {
+  const requestBody = {
     title,
     content,
-    pinned
-  });
+    isPinned: pinned  // 백엔드 엔티티와 일치하는 필드명 사용
+  };
+  
+  console.log('API 요청 데이터:', requestBody);
+  console.log('isPinned 타입:', typeof requestBody.isPinned);
+  console.log('isPinned 값:', requestBody.isPinned);
+  
+  const response = await api.post('/announcements', requestBody);
+  console.log('API 응답:', response.data);
   return response.data;
 };
 
@@ -215,11 +218,18 @@ export const updateNotice = async (
   content: string,
   pinned: boolean = false
 ): Promise<Notice> => {
-  const response = await api.put(`/announcements/${noticeId}`, {
+  const requestBody = {
     title,
     content,
-    pinned
-  });
+    isPinned: pinned  // 백엔드 엔티티와 일치하는 필드명 사용
+  };
+  
+  console.log('공지사항 수정 API 요청 데이터:', requestBody);
+  console.log('isPinned 타입:', typeof requestBody.isPinned);
+  console.log('isPinned 값:', requestBody.isPinned);
+  
+  const response = await api.put(`/announcements/${noticeId}`, requestBody);
+  console.log('공지사항 수정 API 응답:', response.data);
   return response.data;
 };
 

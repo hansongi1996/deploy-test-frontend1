@@ -23,7 +23,7 @@ const ParticipantList: React.FC<ParticipantListProps> = ({
     switch (role) {
       case 'ADMIN':
         return 'bg-danger';
-      case 'INSTRUCTOR':
+      case 'TEACHER':
         return 'bg-primary';
       case 'STUDENT':
         return 'bg-success';
@@ -36,7 +36,7 @@ const ParticipantList: React.FC<ParticipantListProps> = ({
     switch (role) {
       case 'ADMIN':
         return '관리자';
-      case 'INSTRUCTOR':
+      case 'TEACHER':
         return '강사';
       case 'STUDENT':
         return '학생';

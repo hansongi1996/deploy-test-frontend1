@@ -9,15 +9,22 @@ export interface Assignment {
 
 export interface Submission {
   id: number;
-  assignmentId: number;
-  studentId: number;
-  studentName: string; // 제출 학생 이름
-  submissionType: 'FILE' | 'LINK';
-  submittedAt: string; // 제출일시
-  fileUrl?: string; // 제출 파일 URL (파일 제출인 경우)
-  linkUrl?: string; // 제출 링크 URL (링크 제출인 경우)
-  grade?: number; // 채점 점수 (채점된 경우)
-  // 필요한 필드를 추가할 수 있습니다.
+  assignment_id: number; // DB 컬럼명과 일치
+  student_id: number; // DB 컬럼명과 일치
+  feedback?: string; // 피드백 (longtext, nullable)
+  file_url?: string; // 파일 URL (varchar(255), nullable)
+  grade?: string; // 채점 점수 (varchar(255), nullable) - DB에서 varchar로 정의됨
+  status: 'GRADED' | 'NOT_SUBMITTED' | 'SUBMITTED'; // enum 값
+  submitted_at?: string; // 제출일시 (datetime, nullable)
+  text_content?: string; // 텍스트 내용 (longtext, nullable)
+  
+  // 프론트엔드에서 추가로 사용할 필드들
+  studentName?: string; // 학생 이름 (프론트엔드에서 추가)
+  assignmentId?: number; // camelCase alias for assignment_id
+  studentId?: number; // camelCase alias for student_id
+  submittedAt?: string; // camelCase alias for submitted_at
+  fileUrl?: string; // camelCase alias for file_url
+  textContent?: string; // camelCase alias for text_content
 }
 
 export interface AssignmentPreviewResponseDTO {

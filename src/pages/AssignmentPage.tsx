@@ -14,7 +14,7 @@ const AssignmentPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('description');
-  const [submissionType, setSubmissionType] = useState<'FILE' | 'LINK'>('FILE');
+  const [submissionType, setSubmissionType] = useState<'FILE' | 'LINK'>('LINK');
   const [file, setFile] = useState<File | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -59,27 +59,15 @@ const AssignmentPage: React.FC = () => {
       setSubmitting(true);
       setError(null);
 
-      let fileUrl: string | undefined;
-
-      if (submissionType === 'FILE') {
-        if (!file) {
-          setError('파일을 선택해주세요.');
-          return;
-        }
-        const uploadResult = await uploadFile(file);
-        fileUrl = uploadResult.fileUrl;
-      } else {
-        if (!linkUrl.trim()) {
-          setError('링크 URL을 입력해주세요.');
-          return;
-        }
+      // 파일 제출은 현재 비활성화, URL 제출만 가능
+      if (!linkUrl.trim()) {
+        setError('링크 URL을 입력해주세요.');
+        return;
       }
 
       await submitAssignment(
         selectedAssignment.id,
-        submissionType,
-        fileUrl,
-        submissionType === 'LINK' ? linkUrl : undefined
+        linkUrl
       );
 
       setSubmitSuccess(true);
@@ -351,12 +339,13 @@ const AssignmentPage: React.FC = () => {
                               <div>
                                 <Form.Check
                                   type="radio"
-                                  label="파일 업로드"
+                                  label="파일 업로드 (현재 비활성화)"
                                   name="submissionType"
                                   value="FILE"
                                   checked={submissionType === 'FILE'}
                                   onChange={(e) => setSubmissionType(e.target.value as 'FILE')}
                                   className="mb-2"
+                                  disabled
                                 />
                                 <Form.Check
                                   type="radio"
@@ -371,7 +360,7 @@ const AssignmentPage: React.FC = () => {
 
                             {submissionType === 'FILE' ? (
                               <Form.Group className="mb-3">
-                                <Form.Label>파일 선택</Form.Label>
+                                <Form.Label>파일 선택 (현재 비활성화)</Form.Label>
                                 <Form.Control
                                   type="file"
                                   onChange={(e) => {
@@ -379,9 +368,10 @@ const AssignmentPage: React.FC = () => {
                                     setFile(target.files?.[0] || null);
                                   }}
                                   accept=".pdf,.doc,.docx,.txt,.zip,.rar"
+                                  disabled
                                 />
                                 <Form.Text className="text-muted">
-                                  지원 형식: PDF, DOC, DOCX, TXT, ZIP, RAR
+                                  파일 업로드 기능은 현재 비활성화되어 있습니다.
                                 </Form.Text>
                               </Form.Group>
                             ) : (

@@ -38,8 +38,8 @@ const NoticePage: React.FC = () => {
   const activeTab = getActiveTab();
 
   // 권한 확인 함수들
-  const isInstructorOrAdmin = () => {
-    return user?.role === 'INSTRUCTOR' || user?.role === 'ADMIN';
+  const isTeacherOrAdmin = () => {
+    return user?.role === 'TEACHER' || user?.role === 'ADMIN';
   };
 
   useEffect(() => {
@@ -313,7 +313,7 @@ const NoticePage: React.FC = () => {
           <div className="bg-white border-bottom py-4 px-4">
             <div className="d-flex justify-content-between align-items-center">
               <h2 className="mb-0">공지사항</h2>
-              {isInstructorOrAdmin() && (
+              {isTeacherOrAdmin() && (
                 <Button variant="primary" onClick={handleCreateNotice}>
                   새 공지사항 작성
                 </Button>
@@ -386,7 +386,7 @@ const NoticePage: React.FC = () => {
                     >
                       자세히 보기
                     </Button>
-                    {isInstructorOrAdmin() && (
+                    {isTeacherOrAdmin() && (
                       <>
                         <Button 
                           variant="outline-secondary" 

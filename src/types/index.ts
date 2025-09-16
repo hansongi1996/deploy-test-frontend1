@@ -3,7 +3,7 @@ export interface User {
   username: string;
   fullName: string;
   email?: string;
-  role?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+  role?: 'STUDENT' | 'TEACHER' | 'ADMIN';
 }
 
 export interface AuthUser {
@@ -11,7 +11,7 @@ export interface AuthUser {
   username: string;
   fullName: string;
   email?: string;
-  role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN';
   token: string;
 }
 
@@ -53,7 +53,7 @@ export interface ChatRoomParticipant {
   username: string;
   nickname: string;
   email?: string;
-  role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN';
   status: 'PENDING' | 'ACTIVE' | 'LEFT';
 }
 
@@ -98,7 +98,7 @@ export interface Notice {
   title: string;
   content: string;
   author: User;
-  pinned: boolean;
+  pinned: boolean;  // 백엔드 응답과 일치
   createdAt: string;
   updatedAt: string;
 }
