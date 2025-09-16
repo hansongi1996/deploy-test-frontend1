@@ -9,6 +9,7 @@ import type { Assignment, SubmissionFromAPI } from '../../types';
 // Submission 타입 정의에 studentName 추가
 export type SubmissionWithStudentName = SubmissionFromAPI & {
   studentName: string;
+  submissionId?: number; // 백엔드에서 실제로 오는 속성명
 };
 
 export default function AssignmentReview() {
@@ -64,7 +65,10 @@ export default function AssignmentReview() {
   };
 
   const goGrade = (submission: SubmissionWithStudentName) => {
-    navigate(`/assignments/submissions/${submission.id}/grade`, {
+    // submissionId 속성 사용 (실제 객체에는 submissionId가 있음)
+    const submissionId = submission.submissionId || submission.id;
+    
+    navigate(`/assignments/submissions/${submissionId}/grade`, {
       state: { submission },
     });
   };

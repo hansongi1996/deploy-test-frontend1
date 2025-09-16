@@ -34,9 +34,17 @@ export default function GradePage() {
       return;
     }
 
+    // submissionId 속성 사용 (실제 객체에는 submissionId가 있음)
+    const submissionId = submission.submissionId || submission.id;
+    
+    if (!submissionId) {
+      alert('제출물 ID가 없습니다. 다시 시도해주세요.');
+      return;
+    }
+
     try {
       // 백엔드의 PATCH /assignments/submissions/{submissionId} API 사용
-      await gradeSubmission(submission.id, { 
+      await gradeSubmission(submissionId, { 
         grade: grade 
       });
       alert('채점이 성공적으로 완료되었습니다.');

@@ -60,6 +60,7 @@ export interface ChatRoomParticipant {
 // 백엔드에서 반환하는 실제 제출물 구조 (snake_case)
 export interface SubmissionFromAPI {
   id: number;
+  submissionId?: number; // 백엔드에서 실제로 오는 속성명
   assignment_id: number;
   student_id: number;
   feedback?: string;
