@@ -16,7 +16,9 @@ export default function GradePage() {
 
   const submission = state?.submission;
 
-  const [grade, setGrade] = useState<number | undefined>(submission?.grade ?? undefined);
+  const [grade, setGrade] = useState<number | undefined>(
+    submission?.grade ? parseInt(submission.grade) : undefined
+  );
 
   // 제출물 데이터가 없으면 뒤로 이동
   useEffect(() => {
@@ -49,35 +51,33 @@ export default function GradePage() {
         <div className="border rounded p-3 space-y-3 bg-gray-100">
           <div className="font-semibold">제출일시</div>
           {/* submittedAt 필드 사용 */}
-          <div>{submission?.submittedAt ? new Date(submission.submittedAt).toLocaleString() : '-'}</div>
+          <div>{submission?.submittedAt || submission?.submitted_at ? new Date(submission.submittedAt || submission.submitted_at!).toLocaleString() : '-'}</div>
 
-          {/* SubmissionType에 따라 내용 표시 */}
-          {submission?.submissionType === 'LINK' ? (
-            <>
-              <div className="font-semibold">제출 링크</div>
-              <div>
-                <a href={submission.linkUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">
-                  {submission.linkUrl}
-                </a>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="font-semibold">첨부파일</div>
-              {/* 백엔드 API 명세에 따라 실제 파일 다운로드 URL로 교체 필요 */}
-              {submission?.fileUrl ? (
+          {/* 제출 내용 표시 */}
+          <>
+            <div className="font-semibold">제출 내용</div>
+            {submission?.file_url || submission?.fileUrl ? (
+              <>
+                <div className="font-semibold">첨부파일</div>
                 <a
                   className="underline"
-                  href={submission.fileUrl}
+                  href={submission.file_url || submission.fileUrl}
                   download
                 >
-                  {submission.fileUrl}
+                  {submission.file_url || submission.fileUrl}
                 </a>
-              ) : (
-                <div className="text-gray-500">첨부된 파일이 없습니다.</div>
-              )}
-            </>
-          )}
+              </>
+            ) : submission?.text_content || submission?.textContent ? (
+              <>
+                <div className="font-semibold">텍스트 제출</div>
+                <div className="whitespace-pre-wrap p-2 bg-white border rounded">
+                  {submission.text_content || submission.textContent}
+                </div>
+              </>
+            ) : (
+              <div className="text-gray-500">제출된 내용이 없습니다.</div>
+            )}
+          </>
         </div>
 
         {/* 교수 확인란 */}
