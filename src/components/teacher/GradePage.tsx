@@ -150,7 +150,7 @@ export default function GradePage() {
             <Button variant="outline" onClick={() => navigate(-1)}>
               이전
             </Button>
-            <Button onClick={handleSubmitGrade}>채점하기</Button>
+            <Button variant="outline" onClick={handleSubmitGrade}>채점하기</Button>
           </div>
         </div>
       </div>
