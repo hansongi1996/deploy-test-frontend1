@@ -57,6 +57,20 @@ export interface ChatRoomParticipant {
   status: 'PENDING' | 'ACTIVE' | 'LEFT';
 }
 
+// 백엔드에서 반환하는 실제 제출물 구조 (snake_case)
+export interface SubmissionFromAPI {
+  id: number;
+  assignment_id: number;
+  student_id: number;
+  feedback?: string;
+  file_url?: string;
+  grade?: string;
+  status: 'GRADED' | 'NOT_SUBMITTED' | 'SUBMITTED';
+  submitted_at?: string;
+  text_content?: string;
+  studentName?: string; // 프론트엔드에서 추가
+}
+
 export interface Assignment {
   id: number;
   title: string;
@@ -71,6 +85,7 @@ export interface Assignment {
   totalStudents: number;
   attachments: AssignmentAttachment[];
   requirements: string[];
+  submissions?: SubmissionFromAPI[]; // 제출물 목록 (강사용)
 }
 
 export interface AssignmentAttachment {

@@ -3,11 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Panel from "../panel";
 import { gradeSubmission } from "../../api";
 import Button from "../Button";
-import type { Submission } from "../../types/assignment";
+import type { SubmissionFromAPI } from "../../types";
 
 // AssignmentReview에서 전달받는 state 타입
 type GradeState = {
-  submission: Submission;
+  submission: SubmissionFromAPI;
 };
 
 export default function GradePage() {
@@ -53,28 +53,28 @@ export default function GradePage() {
         {/* 제출 정보 */}
         <div className="border rounded p-3 space-y-3 bg-gray-100">
           <div className="font-semibold">제출일시</div>
-          {/* submittedAt 필드 사용 */}
-          <div>{submission?.submittedAt || submission?.submitted_at ? new Date(submission.submittedAt || submission.submitted_at!).toLocaleString() : '-'}</div>
+          {/* submitted_at 필드 사용 */}
+          <div>{submission?.submitted_at ? new Date(submission.submitted_at).toLocaleString() : '-'}</div>
 
           {/* 제출 내용 표시 */}
           <>
             <div className="font-semibold">제출 내용</div>
-            {submission?.file_url || submission?.fileUrl ? (
+            {submission?.file_url ? (
               <>
                 <div className="font-semibold">첨부파일</div>
                 <a
                   className="underline"
-                  href={submission.file_url || submission.fileUrl}
+                  href={submission.file_url}
                   download
                 >
-                  {submission.file_url || submission.fileUrl}
+                  {submission.file_url}
                 </a>
               </>
-            ) : submission?.text_content || submission?.textContent ? (
+            ) : submission?.text_content ? (
               <>
                 <div className="font-semibold">텍스트 제출</div>
                 <div className="whitespace-pre-wrap p-2 bg-white border rounded">
-                  {submission.text_content || submission.textContent}
+                  {submission.text_content}
                 </div>
               </>
             ) : (

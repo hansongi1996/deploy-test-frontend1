@@ -143,14 +143,6 @@ export const getAssignmentDetails = async (
   return response.data;
 };
 
-// 강사용: 특정 과제의 제출물 목록 조회
-export const getSubmissionsByAssignmentId = async (
-  assignmentId: number,
-): Promise<Submission[]> => {
-  const response = await api.get(`/assignments/${assignmentId}/submissions`);
-  return response.data;
-};
-
 // 학생용: 과제 제출
 export const submitAssignment = async (
   assignmentId: number,

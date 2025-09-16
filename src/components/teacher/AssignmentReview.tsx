@@ -2,13 +2,12 @@
 
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { getAssignments, getSubmissionsByAssignmentId } from '../../api';
+import { getAssignments, getAssignment } from '../../api';
 import Panel from '../panel';
-import type { Assignment } from '../../types';
-import type { Submission as AssignmentSubmission } from '../../types/assignment';
+import type { Assignment, SubmissionFromAPI } from '../../types';
 
 // Submission 타입 정의에 studentName 추가
-export type SubmissionWithStudentName = AssignmentSubmission & {
+export type SubmissionWithStudentName = SubmissionFromAPI & {
   studentName: string;
 };
 
@@ -46,17 +45,12 @@ export default function AssignmentReview() {
       setLoading(true);
       setSelectedAssignment(assignment);
 
-      // 제출물 목록을 실제 API로 조회
-      const submissionsData = await getSubmissionsByAssignmentId(assignment.id);
-      const withNames: SubmissionWithStudentName[] = submissionsData.map((s) => ({
+      // 제출물 목록을 실제 API로 조회 (/api/assignments/{id})
+      const assignmentData = await getAssignment(assignment.id);
+      const submissionsData = assignmentData.submissions || [];
+      const withNames: SubmissionWithStudentName[] = submissionsData.map((s: SubmissionFromAPI) => ({
         ...s,
-        studentName: (s as any).studentName ?? `학생-${s.student_id}`,
-        // DB 필드명을 camelCase로 매핑
-        studentId: s.student_id,
-        assignmentId: s.assignment_id,
-        submittedAt: s.submitted_at,
-        fileUrl: s.file_url,
-        textContent: s.text_content,
+        studentName: s.studentName ?? `학생-${s.student_id}`,
       }));
 
       setSubmissions(withNames);
@@ -69,7 +63,7 @@ export default function AssignmentReview() {
     }
   };
 
-  const goGrade = (submission: AssignmentSubmission) => {
+  const goGrade = (submission: SubmissionWithStudentName) => {
     navigate(`/assignments/submissions/${submission.id}/grade`, {
       state: { submission },
     });
