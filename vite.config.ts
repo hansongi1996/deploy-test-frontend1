@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/deploy-test-frontend1/',
   plugins: [react()],
+})
   define: {
     global: 'window',        // ← 핵심
     'process.env': {},       // (옵션) process 관련 에러 예방
