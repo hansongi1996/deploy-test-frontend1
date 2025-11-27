@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/deploy-test-frontend1/',
+  base: '/',
   plugins: [react()],
   define: {
     global: 'window',        // ← 핵심
